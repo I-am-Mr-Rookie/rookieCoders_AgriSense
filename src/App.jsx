@@ -490,14 +490,22 @@ export default function App() {
           <div><span className="eyebrow">Rookie Coders · Tier 1</span><h1>Agri<span>Sense</span></h1></div>
         </div>
         <div className="header-actions">
-          <label className="theme-control">
-            <span className="sr-only">Theme</span>
-            <select aria-label="Theme" value={theme} onChange={(event) => changeTheme(event.target.value)}>
-              <option value="system">System theme</option>
-              <option value="light">Light mode</option>
-              <option value="dark">Dark mode</option>
-            </select>
-          </label>
+          <div className="theme-control" role="group" aria-label="Color theme">
+            {[
+              { value: "system", label: "System" },
+              { value: "light", label: "Light" },
+              { value: "dark", label: "Dark" },
+            ].map((option) => (
+              <button
+                type="button"
+                key={option.value}
+                aria-pressed={theme === option.value}
+                onClick={() => changeTheme(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
           <button type="button" className="demo" disabled={busy} onClick={runDemo}>Start fresh Gazipur demo</button>
         </div>
       </header>

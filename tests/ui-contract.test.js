@@ -10,6 +10,8 @@ const markdownSource = existsSync(markdownUrl) ? readFileSync(markdownUrl, "utf8
 const runMessageSource = existsSync(runMessageUrl) ? readFileSync(runMessageUrl, "utf8") : "";
 const evidenceListSource = existsSync(evidenceListUrl) ? readFileSync(evidenceListUrl, "utf8") : "";
 const cssSource = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+const mainSource = readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+const packageSource = readFileSync(new URL("../package.json", import.meta.url), "utf8");
 const compactCss = cssSource.replace(/\s+/g, "");
 
 function assertIncludesAll(source, fragments) {
@@ -106,7 +108,7 @@ test("visual system includes high-contrast tokens, keyboard focus, and reduced m
 
 test("narrow layouts contain flex, grid, and long-content overflow", () => {
   assertIncludesAll(compactCss, [
-    "body{margin:0;max-width:100%;overflow-x:hidden}",
+    "body{margin:0;max-width:100%;overflow-x:hidden;",
     "main,.layout,.panel,.hero,.status,form,input,pre{min-width:0}",
     "input{width:100%;max-width:100%",
     "a,p,small,dd{overflow-wrap:anywhere}",
@@ -144,7 +146,7 @@ test("Tier 1 client exposes streamed in-chat runs, persistent memory, and schedu
     'fetch("/api/memory/preferences"',
     "Evidence & safety details",
     "Quantity omitted",
-    'aria-label="Theme"',
+    'aria-label="Color theme"',
     "<AgentRunMessage",
     "<EvidenceGroupList",
   ]);
@@ -245,9 +247,55 @@ test("Tier 1 visual contracts include independent cards and complete light/dark 
     ".cardsarticle{align-self:start;",
     '[data-theme="dark"]',
     '@media(prefers-color-scheme:dark)',
-    ".activity-list",
+    ".agent-run-steps",
     ".memory-panel",
     ".schedule-grid",
     ".markdown",
   ]);
+});
+
+test("approved brand uses locally bundled editorial and Bangla-ready variable fonts", () => {
+  assertIncludesAll(packageSource, [
+    '"@fontsource-variable/anek-bangla"',
+    '"@fontsource-variable/newsreader"',
+  ]);
+  assertIncludesAll(mainSource, [
+    '@fontsource-variable/anek-bangla',
+    '@fontsource-variable/newsreader',
+  ]);
+  assertIncludesAll(cssSource, [
+    '"Newsreader Variable"',
+    '"Anek Bangla Variable"',
+  ]);
+});
+
+test("theme control is an accessible System Light Dark segmented control", () => {
+  assertIncludesAll(appSource, [
+    'role="group"',
+    'aria-label="Color theme"',
+    'aria-pressed={theme === option.value}',
+    'System',
+    'Light',
+    'Dark',
+  ]);
+  assert.equal(appSource.includes('<select aria-label="Theme"'), false);
+});
+
+test("approved chat-first theme removes legacy light leakage and styles agent runs", () => {
+  assertIncludesAll(compactCss, [
+    "--canvas:",
+    "--surface:",
+    "--surface-soft:",
+    "--accent:",
+    "--display-font:",
+    "--body-font:",
+    ".layout{display:grid;grid-template-columns:minmax(0,2fr)minmax(280px,1fr)",
+    ".agent-run-message",
+    ".agent-run-summary",
+    ".agent-run-step",
+    ".evidence-group-heading",
+    "@media(prefers-reduced-motion:reduce)",
+  ]);
+  assert.equal(compactCss.includes(".best{background:#edf3eb"), false);
+  assert.equal(compactCss.includes("transition:all"), false);
 });
