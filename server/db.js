@@ -3,9 +3,17 @@ import pg from "pg";
 const memory = new Map();
 let pool;
 
+export function createPoolConfig(env = process.env) {
+  const config = { connectionString: env.DATABASE_URL, max: 5 };
+  if (env.DATABASE_SSL_REJECT_UNAUTHORIZED === "false") {
+    config.ssl = { rejectUnauthorized: false };
+  }
+  return config;
+}
+
 function getPool() {
   if (!process.env.DATABASE_URL) return null;
-  pool ??= new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+  pool ??= new pg.Pool(createPoolConfig());
   return pool;
 }
 

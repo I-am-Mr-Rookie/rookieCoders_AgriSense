@@ -46,10 +46,12 @@ OPENAI_API_KEY=server-side-only
 OPENAI_MODEL=gpt-5.6-sol
 OPENAI_REASONING_EFFORT=high
 DATABASE_URL=server-side-only
+DATABASE_SSL_REJECT_UNAUTHORIZED=true
 PORT=3001
 ```
 
 Never place secret values in Git, the browser client, trace output, screenshots, or model prompts.
+Keep database certificate verification enabled. If a controlled DigitalOcean database endpoint presents its documented self-signed chain, the target may explicitly set `DATABASE_SSL_REJECT_UNAUTHORIZED=false`; the override is never automatic.
 
 ## Verified locally
 
