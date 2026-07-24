@@ -8,6 +8,7 @@ import { buildSeasonPlan, createTraceEntry, getMissingFields, rankCrops } from "
 import { databaseMode, initializeDatabase, loadSession, saveSession } from "./db.js";
 import { explainRecommendation, extractProfilePatch, openAiMode } from "./openai.js";
 import { getCropEvidence, getPlanEvidence, loadCorpus, retrieveFacts } from "./rag.js";
+import { publicFailure, ValidationError, validateProfilePatch } from "./validation.js";
 import { getWeather } from "./weather.js";
 
 const app = express();
@@ -40,11 +41,13 @@ app.post("/api/session/message", async (req, res) => {
   const sessionId = String(req.body.sessionId || crypto.randomUUID());
   try {
     const session = await loadSession(sessionId);
-    const patch = req.body.profilePatch ?? await extractProfilePatch(String(req.body.message || ""), session.profile);
+    const patch = validateProfilePatch(
+      req.body.profilePatch ?? await extractProfilePatch(String(req.body.message || ""), session.profile),
+    );
     session.profile = { ...session.profile, ...patch };
+    await saveSession(session);
     const missingFields = getMissingFields(session.profile);
     if (missingFields.length) {
-      await saveSession(session);
       return res.json({
         sessionId,
         profile: session.profile,
@@ -94,7 +97,12 @@ app.post("/api/session/message", async (req, res) => {
     await saveSession(session);
     res.json({ sessionId, profile: session.profile, assistant: assistantText(explanation), ...session.lastResult });
   } catch (error) {
-    res.status(502).json({ error: error.message, phase: "Tier-0", recoverable: true });
+    if (error instanceof ValidationError) {
+      return res.status(400).json({ error: error.message, phase: "Tier-0", recoverable: true });
+    }
+    const errorId = crypto.randomUUID();
+    console.error(`AgriSense Tier-0 request failed (${errorId})`, error);
+    return res.status(502).json(publicFailure(errorId));
   }
 });
 
