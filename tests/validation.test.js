@@ -33,6 +33,21 @@ test("accepts a partial profile patch without adding missing fields", () => {
   });
 });
 
+test("accepts Bangladesh district and common district-style locations", () => {
+  for (const location of [
+    "Gazipur",
+    "Dhaka, Bangladesh",
+    "Chattogram District, Bangladesh",
+    "Bogura",
+    "Mymensingh Division",
+    "Cumilla, Bangladesh",
+    "Sreepur Upazila, Gazipur, Bangladesh",
+    "Gazipur District, Dhaka Division, Bangladesh",
+  ]) {
+    assert.deepEqual(validateProfilePatch({ location }), { location }, location);
+  }
+});
+
 test("rejects unknown profile fields", () => {
   assert.throws(
     () => validateProfilePatch({ location: "Gazipur", ownerName: "Internal only" }),
@@ -48,6 +63,18 @@ test("rejects locations with obvious non-Bangladesh country tokens", () => {
     "Austin, United States",
     "London, UK",
     "London, United Kingdom",
+  ]) {
+    assert.throws(() => validateProfilePatch({ location }), ValidationError, location);
+  }
+});
+
+test("rejects obvious non-Bangladesh and unknown locations", () => {
+  for (const location of [
+    "Tokyo, Japan",
+    "Paris, France",
+    "Kathmandu, Nepal",
+    "New York",
+    "Unknown Farm Region",
   ]) {
     assert.throws(() => validateProfilePatch({ location }), ValidationError, location);
   }
@@ -70,6 +97,20 @@ test("rejects invalid budgets", () => {
       ValidationError,
       String(budgetBdt),
     );
+  }
+});
+
+test("rejects coercible non-numeric farm-size and budget input types", () => {
+  const invalidValues = [true, false, [], ["2"], {}, null, "", "   "];
+
+  for (const field of ["farmSizeAcres", "budgetBdt"]) {
+    for (const value of invalidValues) {
+      assert.throws(
+        () => validateProfilePatch({ [field]: value }),
+        ValidationError,
+        `${field}: ${JSON.stringify(value)}`,
+      );
+    }
   }
 });
 
