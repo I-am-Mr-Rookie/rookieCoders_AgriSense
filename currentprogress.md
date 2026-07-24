@@ -1,6 +1,6 @@
 # AgriSense Tier 0 — Current Progress
 
-**As of:** 24 July 2026, 23:10 Asia/Dhaka
+**As of:** 24 July 2026, 23:50 Asia/Dhaka
 
 **Repository:** <https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense>
 
@@ -27,14 +27,14 @@ The current revision covers all eight Tier 0 product surfaces locally:
 
 ## Verification
 
-The current merged candidate passed `npm.cmd run check`:
+The verified release passed `npm.cmd run check`:
 
-- 58 tests, 58 passed, 0 failed;
+- 68 tests, 68 passed, 0 failed;
 - production Vite build passed;
 - input/recovery tests cover strict districts and decimals, save-state truth, retry boundaries, and bounded logging;
 - tool-loop tests cover allow-listing, duplicate rejection, call limits, deterministic recovery, reasoning/function output round trips, and secret redaction;
-- RAG tests cover all nine datasets, blocked-row exclusion, positive-overlap retrieval, Gazipur mustard provenance, bounded scoring, plan evidence, rationales, and instruction-like source text;
-- UI tests cover session fallback, fresh-demo isolation, honest ARIA states, financial labels, mojibake, and narrow layout contracts.
+- RAG tests cover all nine datasets, blocked-row exclusion, positive-overlap retrieval, Gazipur mustard provenance, bounded scoring, evidence-driven plan text, rationales, and instruction-like source text;
+- UI tests cover reload-safe session IDs, fresh-demo isolation, honest staged status, financial labels, mojibake, keyboard focus, reduced motion, and narrow layout contracts.
 
 Medium HTTP evaluation passed without local secrets:
 

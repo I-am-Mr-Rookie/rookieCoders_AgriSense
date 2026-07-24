@@ -155,13 +155,20 @@ function addDays(dateString, days) {
 
 export function buildSeasonPlan(cropId, startDate, planEvidence = {}) {
   const crop = CROPS.find((item) => item.id === cropId) ?? CROPS[0];
-  const stage = (name, days, action, evidence = []) => ({
+  const stage = (name, days, action, evidence = []) => {
+    const first = evidence[0];
+    const excerpt = String(first?.text ?? "").replace(/\s+/g, " ").trim().slice(0, 220);
+    const groundedAction = excerpt
+      ? `${action} Retrieved guidance (${first.publisher || "source"}): ${excerpt}`
+      : action;
+    return {
     stage: name,
     date: addDays(startDate, days),
-    action,
+    action: groundedAction,
     truthLabel: evidence.length ? "RETRIEVED_EVIDENCE" : "TEAM_ASSUMPTION",
     evidence,
-  });
+    };
+  };
   return [
     stage("land_preparation", 0, "Prepare and level the field; verify drainage."),
     stage("sowing", 7, `Sow ${crop.name} within the selected Rabi window.`, planEvidence.calendar),

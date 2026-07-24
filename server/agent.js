@@ -29,7 +29,7 @@ export async function runToolLoop({
       reasoning,
       input: history,
       tools: toolDefinitions,
-      parallel_tool_calls: false,
+      parallel_tool_calls: true,
       store: false,
     });
     const calls = (response.output ?? []).filter((item) => item.type === "function_call");

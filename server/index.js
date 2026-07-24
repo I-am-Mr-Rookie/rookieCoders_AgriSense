@@ -7,6 +7,7 @@ import { assistantText } from "../shared/assistant.js";
 import { buildSeasonPlan, createTraceEntry, getMissingFields, rankCrops } from "./core.js";
 import { databaseMode, initializeDatabase, loadSession, saveSession } from "./db.js";
 import { explainRecommendation, extractProfilePatch, openAiMode } from "./openai.js";
+import { createHttpErrorHandler } from "./http.js";
 import { getCropEvidence, getPlanEvidence, loadCorpus, retrieveFacts } from "./rag.js";
 import { createPersistenceGuard, summarizeError } from "./recovery.js";
 import { getReleaseRevision } from "./revision.js";
@@ -115,6 +116,8 @@ app.post("/api/session/message", async (req, res) => {
     return res.status(502).json(persistence.failurePayload(errorId));
   }
 });
+
+app.use(createHttpErrorHandler());
 
 app.use(express.static(dist));
 app.get("*path", (_req, res) => res.sendFile(path.join(dist, "index.html")));

@@ -152,6 +152,23 @@ test("season plan labels retrieved evidence and team assumptions", () => {
   assert.ok(plan.every((item) => item.truthLabel));
 });
 
+test("retrieved agronomy evidence changes the corresponding plan advice", () => {
+  const withoutEvidence = buildSeasonPlan("mustard", "2026-11-01");
+  const withEvidence = buildSeasonPlan("mustard", "2026-11-01", {
+    fertilizer: [{
+      id: "fert-grounding-1",
+      publisher: "BARC",
+      text: "Mustard nutrient guidance for low nitrogen soils.",
+    }],
+  });
+  const plainAction = withoutEvidence.find((item) => item.stage === "fertilizer").action;
+  const groundedAction = withEvidence.find((item) => item.stage === "fertilizer").action;
+
+  assert.notEqual(groundedAction, plainAction);
+  assert.match(groundedAction, /Mustard nutrient guidance for low nitrogen soils/);
+  assert.match(groundedAction, /BARC/);
+});
+
 test("retrieval returns public-source citations rather than model recall", () => {
   const results = retrieveKnowledge("mustard fertilizer loam", 2);
 

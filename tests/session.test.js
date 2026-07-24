@@ -5,6 +5,8 @@ import {
   createFreshDemoState,
   createInitialConversation,
   createSessionId,
+  loadOrCreateSessionId,
+  persistSessionId,
 } from "../src/session.js";
 
 test("uses crypto.randomUUID when the browser provides it", () => {
@@ -21,6 +23,44 @@ test("creates a non-empty fallback when crypto.randomUUID is unavailable", () =>
   const sessionId = createSessionId(null, () => 12345, () => 0.5);
 
   assert.match(sessionId, /^agrisense-[a-z0-9]+-[a-z0-9]+$/);
+});
+
+test("reuses the stored session ID after a browser reload", () => {
+  const values = new Map([["agrisense.sessionId", "saved-session"]]);
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+
+  const sessionId = loadOrCreateSessionId(storage, () => "new-session");
+
+  assert.equal(sessionId, "saved-session");
+});
+
+test("stores new and explicitly replaced session IDs", () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+
+  assert.equal(loadOrCreateSessionId(storage, () => "created-session"), "created-session");
+  assert.equal(values.get("agrisense.sessionId"), "created-session");
+  assert.equal(persistSessionId("demo-session", storage), "demo-session");
+  assert.equal(values.get("agrisense.sessionId"), "demo-session");
+});
+
+test("storage failures fall back to a usable in-memory session ID", () => {
+  const storage = {
+    getItem: () => {
+      throw new Error("storage blocked");
+    },
+    setItem: () => {
+      throw new Error("storage blocked");
+    },
+  };
+
+  assert.equal(loadOrCreateSessionId(storage, () => "fallback-session"), "fallback-session");
 });
 
 test("a fresh demo gets a new session and only resets demo-owned state", () => {

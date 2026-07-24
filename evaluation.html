@@ -18,7 +18,7 @@
   <header>
     <span class="verdict">VERIFIED TIER 0 RELEASE: 95/100 READINESS</span>
     <h1>AgriSense evidence-backed self-test</h1>
-    <p>Frozen at 24 July 2026, 23:27 Asia/Dhaka. Local, clean-clone, GitHub, DigitalOcean, API, Chrome, and visible Computer Use evidence all passed for the release process.</p>
+    <p>Frozen at 24 July 2026, 23:35 Asia/Dhaka. Local, clean-clone, GitHub, DigitalOcean, API, Chrome, and visible Computer Use evidence all passed for the release process.</p>
   </header>
 
   <section class="card"><h2>Starting-state assessment</h2>
@@ -32,9 +32,9 @@
       <tr><td>3+ crops</td><td class="pass">PASS</td><td>Four returned; rainfall and RAG alter ranking.</td><td>Base coefficients are team assumptions.</td></tr>
       <tr><td>Season plan</td><td class="pass">PASS</td><td>Six stages; 5 evidence-backed, 1 labeled assumption in Gazipur probe.</td><td>Exact dates need local validation.</td></tr>
       <tr><td>Financials</td><td class="pass">PASS</td><td>Scaling/consistency probe and visible team-assumption label.</td><td>Prices, yield, costs are demo assumptions, not live quotes.</td></tr>
-      <tr><td>Explained reasoning</td><td class="pass">PASS</td><td>Bounded loop and sanitized deterministic recovery are tested; a historical live probe selected all five evidence tools.</td><td>Exact target-environment repeat remains a release gate.</td></tr>
+      <tr><td>Explained reasoning</td><td class="pass">PASS</td><td>Bounded loop and sanitized deterministic recovery are tested; the current public release selected all five evidence tools in restart and free-text probes.</td><td>Live model latency/cost varies; provider failure is safely injected rather than forced in production.</td></tr>
       <tr><td>RAG feeds advice</td><td class="pass">PASS</td><td>1,976 fact cards; positive-overlap retrieval; BARC score blended into recommendations; every crop exposes source IDs and rationale.</td><td>Lexical/structured retrieval, not embeddings; no unverified scrape was added.</td></tr>
-      <tr><td>Visible trace</td><td class="pass">PASS</td><td>HTTP response exposed 5 operations; UI renders raw trace.</td><td>Secrets are redacted; model calls appear only when configured.</td></tr>
+      <tr><td>Visible trace</td><td class="pass">PASS</td><td>Current public flows exposed 10 operations, including all five model-selected inspection tools; UI renders the trace.</td><td>Secrets are redacted; model calls appear only when configured.</td></tr>
     </tbody>
   </table></div></section>
 
@@ -59,12 +59,12 @@ explanation returned=true</pre>
   </section>
 
   <section class="card"><h2>Conservative rubric outlook</h2>
-    <p><strong>Evidence-based self-score: 95/100, not a judge score.</strong> Official functional/contract correctness 34/35; critical edge/failure/concurrency behavior 17/20; regression/demo reliability 15/15; clean target reproducibility 15/15; submission/secrets/docs/Git integrity 10/10; maintainability 4/5. Tier 1/2 and bdapps are outside this Tier 0 rubric.</p>
+    <p><strong>Evidence-based self-score: 95/100, not a judge score.</strong> Official functional/contract correctness 34/35; critical edge/failure/concurrency behavior 17/20; regression/demo reliability 15/15; clean target reproducibility 15/15; submission/secrets/docs/Git integrity 10/10; maintainability 4/5. Deductions cover district-only intake scope, dedicated weather-timeout/duplicate-request/outage probes, and source-contract-heavy UI tests. Tier 1/2 and bdapps are outside this Tier 0 rubric.</p>
     <pre>Current release verification
 GitHub origin/main equals the deployed checkout
 public health.releaseRevision equals the deployed Git SHA
 PM2=online; PostgreSQL=genuine target; gpt-5.6-sol/high
-fresh clone=58/58 + build; Droplet=58/58 + build
+fresh clone=68/68 + build; Droplet=68/68 + build
 restart-persist-complete flow=PASS; model inspection tools=5/5
 Chrome DOM/status/finance/trace=PASS
 viewport 320/360/375 horizontal overflow=false

@@ -61,9 +61,9 @@ Keep database certificate verification enabled. If a controlled DigitalOcean dat
 
 ## Verified locally
 
-Current release candidate on 24 July 2026:
+Verified Tier 0 release on 24 July 2026:
 
-- `npm.cmd run check`: 58/58 tests passed and the production build passed;
+- `npm.cmd run check`: 68/68 tests passed and the production build passed;
 - validation/recovery probes cover canonical Bangladesh districts, strict decimal bounds, save-before-dependency state, distinct initial-save/downstream failures, and bounded logs;
 - grounding probes cover positive-score retrieval, four-crop rationales, preserved ranking arithmetic, and secret-safe deterministic model recovery;
 - judge-path probes cover fresh session IDs, reset semantics, honest/accessible status, financial assumption labels, mojibake, and responsive CSS contracts;

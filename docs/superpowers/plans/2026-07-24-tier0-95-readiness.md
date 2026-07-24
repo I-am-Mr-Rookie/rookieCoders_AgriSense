@@ -34,7 +34,7 @@
 | Input validation and retry truth | `669571d`, `584810f`, `0db6300`, `773550b` | RED failures reproduced; strict-district quality re-review approved |
 | Grounded retrieval and recovery | `7d58506`, `f33aa88` | Focused and Unicode lexical checks passed; Task 2/3 spec and quality reviews approved |
 | Judge-path state and layout | `9e416b3` | 9 focused checks; final merged `npm.cmd run check` passed 58 tests and the Vite build |
-| Release identity | `9eac23c` | 2 revision checks passed; final target SHA proof remains a release gate |
+| Release identity | `9eac23c` | Revision checks passed; origin/main, Droplet, PM2, and public health SHA equality verified |
 
 ### Task 1: Validate farm input and preserve retryable state
 

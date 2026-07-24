@@ -5,14 +5,19 @@ import { runToolLoop } from "../server/agent.js";
 
 function fakeClient(outputs) {
   let index = 0;
+  const requests = [];
   return {
     responses: {
-      async create() {
+      async create(request) {
+        requests.push(request);
         return outputs[index++];
       },
     },
     calls() {
       return index;
+    },
+    requests() {
+      return requests;
     },
   };
 }
@@ -50,6 +55,7 @@ test("executes an allow-listed function and round-trips its output", async () =>
   assert.equal(result.trace[0].tool, "get_weather");
   assert.equal(result.trace[0].result.precipitationMm, 12.5);
   assert.equal(client.calls(), 2);
+  assert.equal(client.requests()[0].parallel_tool_calls, true);
 });
 
 test("redacts secret-shaped fields from tool traces", async () => {
@@ -111,5 +117,26 @@ test("rejects unknown and repeated tool calls", async () => {
       handlers: { safe_tool: async ({ value }) => ({ value }) },
     }),
     /repeated/,
+  );
+});
+
+test("stops before executing more than the configured tool-call limit", async () => {
+  const calls = Array.from({ length: 9 }, (_, index) => ({
+    type: "function_call",
+    call_id: `call_${index}`,
+    name: "safe_tool",
+    arguments: `{"value":${index}}`,
+  }));
+  const client = fakeClient([{ id: "resp_many", output: calls, output_text: "" }]);
+
+  await assert.rejects(
+    runToolLoop({
+      client,
+      input: "run",
+      maxCalls: 8,
+      toolDefinitions: [{ type: "function", name: "safe_tool", parameters: { type: "object" } }],
+      handlers: { safe_tool: async ({ value }) => ({ value }) },
+    }),
+    /Tool-call limit 8 exceeded/,
   );
 });

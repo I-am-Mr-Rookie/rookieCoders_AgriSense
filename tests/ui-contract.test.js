@@ -30,8 +30,9 @@ test("recommendation shows the complete financial contract", () => {
 
 test("fresh demo state is sent with its new explicit session ID", () => {
   assertIncludesAll(appSource, [
-    'import { createFreshDemoState, createInitialConversation, createSessionId } from "./session.js";',
-    "const [sessionId, setSessionId] = useState(() => createSessionId());",
+    "loadOrCreateSessionId",
+    "persistSessionId",
+    "const [sessionId, setSessionId] = useState(() => loadOrCreateSessionId());",
     "async function send(payload, requestSessionId = sessionId)",
     "body: JSON.stringify({ ...payload, sessionId: requestSessionId })",
     "function runDemo()",
@@ -68,6 +69,33 @@ test("judge path exposes honest and accessible request states", () => {
 test("client source contains no mojibake markers", () => {
   assert.equal(appSource.includes("Â"), false);
   assert.equal(appSource.includes("â€¦"), false);
+});
+
+test("polished workspace exposes semantic navigation and honest progress feedback", () => {
+  assertIncludesAll(appSource, [
+    'aria-label="Planning workspace"',
+    'className="workflow-tabs"',
+    "Farm advisor",
+    "Crop ranking",
+    "Season roadmap",
+    "Evidence & trace",
+    'role="progressbar"',
+    "Generating your grounded plan",
+    'tabIndex={result ? undefined : -1}',
+  ]);
+  assert.equal(appSource.includes("aria-valuenow"), false);
+  assert.equal(appSource.includes("setInterval"), false);
+});
+
+test("visual system includes high-contrast tokens, keyboard focus, and reduced motion", () => {
+  assertIncludesAll(compactCss, [
+    "--bg-app:",
+    "--emerald-primary:",
+    "--text-main:",
+    ".workflow-tabs",
+    ":focus-visible",
+    "@media(prefers-reduced-motion:reduce)",
+  ]);
 });
 
 test("narrow layouts contain flex, grid, and long-content overflow", () => {

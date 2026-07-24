@@ -1,15 +1,15 @@
-# Re-engineered Prompt - AgriSense Tier 0 Release Closure
+# Re-engineered Prompt - AgriSense Post-Tier-0 Continuation
 
 ## Role Stack
 
-- **Primary role:** AgriSense Tier 0 Implementation and Delivery Lead accountable for a deployed, judge-auditable core.
+- **Primary role:** AgriSense Release Custodian and Next-Phase Planning Lead accountable for preserving the verified Tier 0 baseline.
 - **Prompt-design role:** Agent Workflow and Prompt Repair Engineer responsible for the bounded OpenAI tool loop and evidence contract.
 - **Platform role:** React/Vite, Express/Node, OpenAI Responses API, PostgreSQL, DigitalOcean, and in-process RAG Engineer.
 - **Validation role:** Official-Contract, Regression, Demo, Secret-Safety, and Release Auditor.
 
 ## Objective
 
-Close and verify the hardened AgriSense Tier 0 release candidate. Preserve the implemented vertical slice, structured RAG, deterministic validation/ranking/finance, bounded GPT-5.6 Sol tool loop, deterministic recovery, and fresh judge path. Finish only evidence-backed Critical/Important defects, run the complete release gate, deploy the exact tested revision to the existing DigitalOcean target, and push/verify that same revision on GitHub.
+Continue from the verified AgriSense Tier 0 release without rebuilding or re-litigating completed work. First confirm GitHub, public health, and the local checkout still identify the same release. Preserve the structured RAG, deterministic validation/ranking/finance, bounded GPT-5.6 Sol tool loop, deterministic recovery, persistent sessions, and judge path. Do not start Tier 1, Tier 2, or bdapps until Koushik explicitly selects and approves the next phase.
 
 Do not implement Tier 1, Tier 2, bdapps, embeddings, broad UI polish, or unrelated refactors during this rescue.
 
@@ -29,8 +29,8 @@ Do not implement Tier 1, Tier 2, bdapps, embeddings, broad UI polish, or unrelat
 - Remote: `https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense.git`
 - Branch: `main`
 - Historical production baseline SHA: `cbb0450d062b383e6cbd02dde34adf7919d60186`.
-- Current merged candidate: 58/58 tests and the Vite production build pass after the Unicode retrieval follow-up.
-- Independent Task 1 specification/quality review and Task 2/3 specification review passed; the final Task 2 quality follow-up must be rechecked.
+- Verified release: 68/68 tests and the Vite production build passed locally; recheck the fresh clone and Droplet after any new commit.
+- Independent Task 1 and Task 2/3 specification and quality reviews passed after all Important findings were patched.
 - The included corpus indexes 1,976 unblocked fact cards across nine structured datasets.
 - Validation, persistence truth, positive-overlap retrieval, crop rationales, model recovery, fresh-demo state, accessibility, responsive CSS, and release identity are implemented.
 - Kawsar corpus limitations must remain visible: production costs are assumptions, calendar/irrigation coverage is partial, some Bengali extraction is garbled, and `PRIOR_PARTIAL` records require caution.
@@ -56,14 +56,12 @@ The phrase "after Tier 1" is treated as a Wispr Flow mismatch meaning **after Ti
 
 In a step-by-step logical process:
 
-1. Recheck the last independent review finding and fix only Critical/Important defects with RED/GREEN evidence.
-2. Freeze the candidate with `npm.cmd run check`, `git diff --check`, tracked-secret scanning, and a clean working tree except the intentionally untracked roadmap.
-3. Commit and push the exact candidate, verify the remote SHA, then clone it into a fresh directory and run `npm.cmd ci`, tests, and build.
-4. Fast-forward the preserved DigitalOcean checkout, install, test, build, set `APP_REVISION` to the exact commit, restart/save PM2, and read the same SHA from public health.
-5. Run public invalid-input, partial-save/restart/complete, Gazipur plan, model-tool-trace, and sanitized-error probes.
-6. Use the explicitly authorized Chrome extension control plus visible Computer Use to verify DOM content, console cleanliness, and the judge path; use no Playwright.
-7. Prove `scrollWidth <= clientWidth` at 320, 360, and 375 px.
-8. Update the defect ledger and score the frozen rubric once. Claim 95 only if the evidence sum is at least 95; otherwise publish the lower score and exact blockers.
+1. Read `currentprogress.md`, `evaluation.html`, and `docs/tier0-defect-ledger.md`; treat completed Tier 0 evidence as the baseline, not a new to-do list.
+2. Re-resolve local `HEAD`, `origin/main`, and public `/api/health.releaseRevision`. If they match and health is sound, do not redeploy or spend on another live model run.
+3. Inspect only new drift, failures, or user-selected next-phase requirements. Patch Tier 0 only if current executable evidence reproduces a regression.
+4. Before any Tier 1 work, produce a bounded plan that preserves Tier 0 APIs, truth labels, secret boundaries, PostgreSQL data, and the current public deployment; wait for Koushik's explicit approval.
+5. Keep Tier 2 and bdapps deferred unless explicitly reopened.
+6. For every future release, reuse the same test/build/secret/clean-clone/exact-SHA/browser evidence discipline.
 
 ## Required Tier 0 Evidence
 
@@ -77,25 +75,11 @@ In a step-by-step logical process:
 8. The UI exposes every consequential tool call, sanitized parameters, raw returned values, source IDs, timestamps, and durations.
 9. The same session survives reload/process restart when PostgreSQL is available.
 
-## Medium Evaluation
+## Executed Tier 0 Evaluation
 
-Run only after the implementation is complete:
+Verified: strict and partial intake; two-turn free-text completion; non-Bangladesh rejection; dry/wet ranking fixtures; financial scaling; irrelevant, stop-word, Bengali, and instruction-like retrieval; OpenAI failure recovery; restart persistence; secret canary scan; exact deployed SHA; five live model inspection tools; Chrome/Computer Use judge path; and 320/360/375 px geometry.
 
-- empty message;
-- partial message with two missing fields;
-- non-Bangladesh location;
-- dry versus wet weather fixture;
-- changed farm size and budget;
-- irrelevant RAG query;
-- source text containing instruction-like content;
-- OpenAI unavailable;
-- weather timeout;
-- duplicate request ID;
-- mobile-width and keyboard judge path;
-- secret canary scan;
-- exact deployed SHA and public health readback.
-
-This is a medium Tier 0 gate, not a load test and not a Tier 1/Tier 2 campaign.
+Not destructively forced on production: a database outage or provider outage. Dedicated weather-timeout and duplicate-request concurrency tests remain part of the explicit 3-point edge-behavior deduction in the 95/100 score, not hidden completion claims.
 
 ## Secret and Deployment Boundaries
 
