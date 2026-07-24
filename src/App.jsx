@@ -11,6 +11,13 @@ import {
 import AgentRunMessage from "./components/AgentRunMessage.jsx";
 import EvidenceGroupList from "./components/EvidenceGroupList.jsx";
 import Markdown from "./components/Markdown.jsx";
+import { PlanRevisionCard } from "./components/PlanRevisionCard.jsx";
+import {
+  appendChatTurn,
+  canCreatePlanFrom,
+  completePlanRevision,
+  createRevisionState,
+} from "./conversation.js";
 import {
   createFreshDemoState,
   createInitialConversation,
@@ -184,6 +191,7 @@ export default function App() {
   const [savedMemory, setSavedMemory] = useState(null);
   const [autoAdjustIrrigation, setAutoAdjustIrrigation] = useState(true);
   const [planStartDate, setPlanStartDate] = useState("2026-11-01");
+  const [revision, setRevision] = useState(createRevisionState);
   const [lastRequest, setLastRequest] = useState(null);
   const requestController = useRef(null);
   const runSequence = useRef(0);
@@ -208,7 +216,12 @@ export default function App() {
     }
   }, [conversation]);
 
-  const status = latestRun?.status === "running"
+  const status = revision.readyToPlan
+    ? {
+        title: "Plan update ready",
+        detail: "Create the updated plan when your farm changes are complete.",
+      }
+    : latestRun?.status === "running"
     ? {
         title: latestRun.events.at(-1)?.label || "Request in progress",
         detail: "Verified progress appears inside the current AgriSense message.",
@@ -319,7 +332,11 @@ export default function App() {
             })
           : completedRun;
       }));
-      if (data.crops) setResult(data);
+      if (data.crops) {
+        setResult(data);
+        setConversation((items) => completePlanRevision(items).items);
+        setRevision(createRevisionState());
+      }
       if (requestMemoryId) {
         setSavedMemory((current) => ({
           ...(current || {}),
@@ -349,9 +366,46 @@ export default function App() {
     }
   }
 
+  async function sendChat(farmerMessage) {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/session/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "chat",
+          message: redactRecoveryIds(farmerMessage, "[recovery code hidden]"),
+          pendingField: revision.pendingField,
+          awaitingField: revision.awaitingField,
+          sessionId,
+          ...(memoryId ? { memoryId } : {}),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "AgriSense could not continue the conversation.");
+      const next = appendChatTurn(conversation, farmerMessage, data, revision);
+      setConversation(next.items);
+      setRevision(next.revision);
+      if (memoryId) {
+        setSavedMemory((current) => ({
+          ...(current || {}),
+          profile: data.profile,
+          lastResult: current?.lastResult,
+          preferences: { autoAdjustIrrigation },
+        }));
+      }
+      setMessage("");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function submit(event) {
     event.preventDefault();
-    if (message.trim()) void send({ message: message.trim(), startDate: planStartDate });
+    if (message.trim()) void sendChat(message.trim());
   }
 
   function runDemo() {
@@ -361,32 +415,56 @@ export default function App() {
     setMessage(fresh.message);
     setConversation(fresh.conversation);
     setResult(fresh.result);
+    setRevision(createRevisionState());
     setError(fresh.error);
-    void send({ profilePatch: DEMO_PROFILE, startDate: planStartDate }, fresh.sessionId, { memoryId: "", mode: "demo" });
+    void send({ action: "plan", profilePatch: DEMO_PROFILE, startDate: planStartDate }, fresh.sessionId, { memoryId: "", mode: "demo" });
+  }
+
+  async function ensurePrivateMemory() {
+    if (memoryId) return memoryId;
+    const response = await fetch("/api/memory/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId,
+        preferences: { autoAdjustIrrigation },
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not create farm memory.");
+    setMemoryId(data.memoryId);
+    setNewMemoryId(data.memoryId);
+    setMemoryInput("");
+    setMemoryPersistence(data.database);
+    setSavedMemory(data.memory);
+    return data.memoryId;
   }
 
   async function createMemory() {
     setBusy(true);
     setError("");
     try {
-      const response = await fetch("/api/memory/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          preferences: { autoAdjustIrrigation },
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not create farm memory.");
-      setMemoryId(data.memoryId);
-      setNewMemoryId(data.memoryId);
-      setMemoryInput("");
-      setMemoryPersistence(data.database);
-      setSavedMemory(data.memory);
+      await ensurePrivateMemory();
     } catch (err) {
       setError(err.message);
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createUpdatedPlan() {
+    setBusy(true);
+    setError("");
+    try {
+      const ensuredMemoryId = await ensurePrivateMemory();
+      setBusy(false);
+      await send(
+        { action: "plan", startDate: planStartDate },
+        sessionId,
+        { memoryId: ensuredMemoryId },
+      );
+    } catch (err) {
+      setError(err.message);
       setBusy(false);
     }
   }
@@ -411,6 +489,7 @@ export default function App() {
       setSavedMemory(data.memory);
       setAutoAdjustIrrigation(data.memory.preferences?.autoAdjustIrrigation !== false);
       setConversation(fresh.conversation);
+      setRevision(createRevisionState());
       if (data.memory.lastResult) {
         const restored = data.memory.lastResult;
         setResult(restored);
@@ -535,7 +614,15 @@ export default function App() {
 
       <div className="layout" id="advisor">
         <section className="panel chat">
-          <h3>Farmer conversation</h3>
+          <div className="chat-heading">
+            <div><span className="eyebrow">Farm advisor</span><h3>Farmer conversation</h3></div>
+            <span className="conversation-state">{busy ? "AgriSense is working" : "Ready"}</span>
+          </div>
+          {revision.planStale && (
+            <p className="stale-plan-notice" role="status">
+              Previous plan — profile changes are waiting.
+            </p>
+          )}
           <div
             className="messages"
             ref={messagesRef}
@@ -562,7 +649,15 @@ export default function App() {
                     retryAvailable={item.run.id === latestRun?.id}
                   />
                 ) : item.role === "agent" ? (
-                  <Markdown>{item.text}</Markdown>
+                  <>
+                    <Markdown>{item.text}</Markdown>
+                    <PlanRevisionCard
+                      revision={item.revision}
+                      canCreate={canCreatePlanFrom(conversation, index)}
+                      busy={busy}
+                      onCreatePlan={() => void createUpdatedPlan()}
+                    />
+                  </>
                 ) : (
                   <p>{item.text}</p>
                 )}

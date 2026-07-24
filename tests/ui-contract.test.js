@@ -6,9 +6,11 @@ const appSource = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8
 const markdownUrl = new URL("../src/components/Markdown.jsx", import.meta.url);
 const runMessageUrl = new URL("../src/components/AgentRunMessage.jsx", import.meta.url);
 const evidenceListUrl = new URL("../src/components/EvidenceGroupList.jsx", import.meta.url);
+const revisionCardUrl = new URL("../src/components/PlanRevisionCard.jsx", import.meta.url);
 const markdownSource = existsSync(markdownUrl) ? readFileSync(markdownUrl, "utf8") : "";
 const runMessageSource = existsSync(runMessageUrl) ? readFileSync(runMessageUrl, "utf8") : "";
 const evidenceListSource = existsSync(evidenceListUrl) ? readFileSync(evidenceListUrl, "utf8") : "";
+const revisionCardSource = existsSync(revisionCardUrl) ? readFileSync(revisionCardUrl, "utf8") : "";
 const cssSource = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 const mainSource = readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
 const packageSource = readFileSync(new URL("../package.json", import.meta.url), "utf8");
@@ -50,7 +52,7 @@ test("fresh demo state is sent with its new explicit session ID", () => {
     "setConversation(fresh.conversation);",
     "setResult(fresh.result);",
     "setError(fresh.error);",
-    'send({ profilePatch: DEMO_PROFILE, startDate: planStartDate }, fresh.sessionId, { memoryId: "", mode: "demo" })',
+    'send({ action: "plan", profilePatch: DEMO_PROFILE, startDate: planStartDate }, fresh.sessionId, { memoryId: "", mode: "demo" })',
   ]);
 });
 
@@ -298,4 +300,20 @@ test("approved chat-first theme removes legacy light leakage and styles agent ru
   ]);
   assert.equal(compactCss.includes(".best{background:#edf3eb"), false);
   assert.equal(compactCss.includes("transition:all"), false);
+});
+
+test("post-plan edits use lightweight chat and an explicit persistent plan action", () => {
+  const revisionUiSource = `${appSource}\n${revisionCardSource}`;
+  for (const expected of [
+    'fetch("/api/session/message"',
+    'action: "chat"',
+    "pendingField: revision.pendingField",
+    "Create updated plan",
+    "profile changes are waiting.",
+    "ensurePrivateMemory",
+    'action: "plan"',
+    "PlanRevisionCard",
+  ]) {
+    assert.ok(revisionUiSource.includes(expected), `missing conversational revision contract: ${expected}`);
+  }
 });
