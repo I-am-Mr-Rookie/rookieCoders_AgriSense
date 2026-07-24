@@ -33,7 +33,7 @@ test("fresh demo state is sent with its new explicit session ID", () => {
     "loadOrCreateSessionId",
     "persistSessionId",
     "const [sessionId, setSessionId] = useState(() => loadOrCreateSessionId());",
-    "async function send(payload, requestSessionId = sessionId)",
+    "async function send(payload, requestSessionId = sessionId, options = {})",
     "body: JSON.stringify({ ...payload, sessionId: requestSessionId })",
     "function runDemo()",
     "const fresh = createFreshDemoState();",
@@ -42,7 +42,7 @@ test("fresh demo state is sent with its new explicit session ID", () => {
     "setConversation(fresh.conversation);",
     "setResult(fresh.result);",
     "setError(fresh.error);",
-    "send({ profilePatch: DEMO_PROFILE }, fresh.sessionId)",
+    'send({ profilePatch: DEMO_PROFILE, startDate: planStartDate }, fresh.sessionId, { memoryId: "" })',
   ]);
 });
 
@@ -107,5 +107,49 @@ test("narrow layouts contain flex, grid, and long-content overflow", () => {
     "@media(max-width:480px)",
     "header,form{flex-direction:column;align-items:stretch}",
     "dl{grid-template-columns:1fr}",
+  ]);
+});
+
+test("Tier 1 client exposes streamed activity, persistent memory, scheduler, and safe Markdown", () => {
+  assertIncludesAll(appSource, [
+    'import ReactMarkdown from "react-markdown"',
+    'import remarkGfm from "remark-gfm"',
+    'import { consumeNdjsonStream } from "./stream.js"',
+    'import { applyTheme, loadThemePreference, persistThemePreference } from "./theme.js"',
+    'fetch("/api/session/message/stream"',
+    "Saved farm memory",
+    "Create private memory",
+    "Resume memory",
+    "Forget memory",
+    "Fertilizer & irrigation scheduler",
+    "Agent activity",
+    "reasoning summary",
+    "AbortController",
+    "Cancel request",
+    "Retry last request",
+    'type="date"',
+    "Process-memory mode: saved memory lasts only until this server restarts.",
+    "Auto-adjust irrigation when forecast rain conflicts",
+    "disabled={busy}",
+    "View saved memory",
+    'fetch("/api/memory/preferences"',
+    "Evidence & safety details",
+    "Quantity omitted",
+    "skipHtml",
+    "remarkPlugins={[remarkGfm]}",
+    'aria-label="Theme"',
+  ]);
+});
+
+test("Tier 1 visual contracts include independent cards and complete light/dark tokens", () => {
+  assertIncludesAll(compactCss, [
+    ".cards{align-items:start;",
+    ".cardsarticle{align-self:start;",
+    '[data-theme="dark"]',
+    '@media(prefers-color-scheme:dark)',
+    ".activity-list",
+    ".memory-panel",
+    ".schedule-grid",
+    ".markdown",
   ]);
 });

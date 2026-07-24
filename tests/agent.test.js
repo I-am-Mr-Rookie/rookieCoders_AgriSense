@@ -56,6 +56,31 @@ test("executes an allow-listed function and round-trips its output", async () =>
   assert.equal(result.trace[0].result.precipitationMm, 12.5);
   assert.equal(client.calls(), 2);
   assert.equal(client.requests()[0].parallel_tool_calls, true);
+  assert.deepEqual(client.requests()[0].reasoning, { effort: "medium", summary: "auto" });
+});
+
+test("returns only API-provided reasoning summaries and never raw reasoning content", async () => {
+  const client = fakeClient([
+    {
+      id: "resp_summary",
+      output: [
+        {
+          type: "reasoning",
+          summary: [{ type: "summary_text", text: "Checked the forecast and farm constraints." }],
+          encrypted_content: "private-encrypted-content",
+          content: "private raw reasoning",
+        },
+        { type: "message", role: "assistant", content: [{ type: "output_text", text: "Done." }] },
+      ],
+      output_text: "Done.",
+    },
+  ]);
+
+  const result = await runToolLoop({ client, input: "run" });
+
+  assert.deepEqual(result.reasoningSummaries, ["Checked the forecast and farm constraints."]);
+  assert.equal(JSON.stringify(result).includes("private raw reasoning"), false);
+  assert.equal(JSON.stringify(result).includes("private-encrypted-content"), false);
 });
 
 test("redacts secret-shaped fields from tool traces", async () => {

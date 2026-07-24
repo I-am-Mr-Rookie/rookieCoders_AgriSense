@@ -59,6 +59,13 @@ export async function saveSession(session) {
   );
 }
 
+export async function deleteSession(id) {
+  const db = getPool();
+  if (!db) return memory.delete(id);
+  const result = await db.query("DELETE FROM farm_sessions WHERE id = $1", [id]);
+  return result.rowCount > 0;
+}
+
 export function databaseMode() {
   return process.env.DATABASE_URL ? "postgresql" : "memory-fallback";
 }

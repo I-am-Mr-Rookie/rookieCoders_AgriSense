@@ -17,24 +17,42 @@ export async function runToolLoop({
   toolDefinitions = [],
   handlers = {},
   maxCalls = 8,
-  reasoning = { effort: "high" },
+  reasoning = { effort: "medium", summary: "auto" },
+  signal,
 }) {
   const history = typeof input === "string" ? [{ role: "user", content: input }] : [...input];
   const trace = [];
+  const reasoningSummaries = [];
   const signatures = new Set();
 
   for (;;) {
+    signal?.throwIfAborted();
     const response = await client.responses.create({
       model,
-      reasoning,
+      reasoning: { ...reasoning, summary: reasoning.summary ?? "auto" },
       input: history,
       tools: toolDefinitions,
       parallel_tool_calls: true,
       store: false,
-    });
+    }, { signal });
+    signal?.throwIfAborted();
+    for (const item of response.output ?? []) {
+      if (item.type !== "reasoning") continue;
+      for (const summary of item.summary ?? []) {
+        if (summary.type === "summary_text" && typeof summary.text === "string" && summary.text.trim()) {
+          reasoningSummaries.push(summary.text.trim().slice(0, 1200));
+        }
+      }
+    }
     const calls = (response.output ?? []).filter((item) => item.type === "function_call");
     if (!calls.length) {
-      return { text: response.output_text ?? "", trace, usage: response.usage ?? null, responseId: response.id };
+      return {
+        text: response.output_text ?? "",
+        trace,
+        reasoningSummaries,
+        usage: response.usage ?? null,
+        responseId: response.id,
+      };
     }
     history.push(...(response.output ?? []));
     for (const call of calls) {

@@ -1,70 +1,72 @@
-# AgriSense Tier 0 — Current Progress
+# AgriSense Tier 1 — Current Progress
 
-**As of:** 24 July 2026, 23:50 Asia/Dhaka
+**As of:** 25 July 2026, Asia/Dhaka
 
 **Repository:** <https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense>
 
-**Status:** The hardened Tier 0 release is pushed, deployed, and verified through exact-SHA health, restart persistence, public API, Chrome, mobile geometry, and visible Computer Use gates.
+**Status:** Tier 1 is implemented and locally verified. It is not deployed.
 
 ## Executive verdict
 
-The starting `T0-Initial` was roughly **38% of a defensible Tier 0**: the vertical slice built and six tests passed, but its four static knowledge cards did not constitute the supplied RAG corpus and GPT-5.6 Sol did not choose tools.
+The approved A+C scope is complete: explicit persistent farm memory and a fertilizer/irrigation scheduler now sit on top of the validated Tier 0 crop-planning flow. The experience has been converted from a blocking request into a streamed agent workspace with inspectable steps, safe Markdown, theme switching, adaptive reasoning effort, and independent disclosures.
 
-The current revision covers all eight Tier 0 product surfaces locally:
+Optional broad proactive alerts were not added. External delivery, image input, Bengali speech, and the real-time voice companion remain Tier 2.
 
-| Requirement | Current evidence |
+## Delivered
+
+| Requirement | Evidence |
 |---|---|
-| Targeted intake | Six required fields; only missing fields are requested. |
-| Input boundary | Canonical Bangladesh district/alias validation, strict decimal bounds, controlled 400s, and sanitized dependency failures. |
-| Live weather | Open-Meteo seven-day Bangladesh forecast feeds ranking. |
-| Three or more crops | Four Rabi crops ranked from profile, weather, finance, and BARC zoning. |
-| Season plan | Six dated checkpoints from land preparation through harvest. |
-| Financials | Itemized cost, yield, revenue, profit, ROI, and break-even. |
-| Explained reasoning | Sol tool loop when configured; labeled deterministic explanation otherwise; safe deterministic recovery if the loop fails. |
-| RAG affects advice | 1,976 indexed fact cards across nine datasets; meaningful queries exclude zero-overlap rows; BARC zoning is blended into crop scores and every crop exposes its inputs and source IDs. |
-| Visible trace | Parameters, results, timestamps, durations, RAG actions, and model-selected tool calls are shown. |
-| Judge path | Every demo starts a fresh session; honest accessible status/error states and narrow-screen containment are regression-tested. |
+| Persistent memory | High-entropy `farm_` recovery ID, SHA-256-derived storage key, create/resume/update/reset endpoints, UI lifecycle controls, PostgreSQL/process-memory compatibility. |
+| Scheduler | Fertilizer and irrigation items with dates, costs, truth labels, confirmation status, and forecast-based irrigation delay. |
+| Agent activity | NDJSON stream with stable ordered events, duration metadata, tool/provider/data summaries, and secret redaction. |
+| Markdown | `react-markdown` + `remark-gfm`; raw HTML disabled; safe external links. |
+| Reasoning | Medium routine default; high only for deterministic difficult-case patterns; only API-provided summaries are displayed. |
+| Crop-card bug | Grid cards use start alignment and independent self-sizing. |
+| Themes | System/light/dark selector with persisted preference and complete tokens. |
+| Latency | Phase measurements plus five-minute normalized-location weather cache and concurrent-request deduplication. |
 
 ## Verification
 
-The verified release passed `npm.cmd run check`:
+- `npm.cmd run check`: 103 passed, 0 failed; production build passed.
+- Health: `Tier-1`, memory/scheduler/activity capabilities true, external notifications false.
+- Memory lifecycle: create, resume, and reset passed; recovery credential was not printed.
+- Memory isolation: create captured the current plan, resume used a fresh browser session, recovered farm data overrode stale session data, and a fresh demo sent no memory credential.
+- Streamed planning: 11 activity events, two schedule items, final plan present.
+- Browser: desktop and 390×844 passed with zero console errors and no horizontal overflow; cancel/retry and the process-memory warning were visible.
+- Cancellation: client disconnect propagates through weather/model requests; aborts during persistence restore the previous session/memory result.
+- Preferences: auto-adjust changes persist immediately, plan/preference mutations are serialized, and resume retains both the latest plan and preference.
+- Scheduler reachability: a live forecast rain day triggered the irrigation-adjustment path through an explicit plan start date.
+- Card regression: `[248,248,248,248]` before; `[340,248,248,248]` after opening the first card; one disclosure open.
+- Theme: dark mode applied and persisted across reload.
+- Latency:
+  - one Open-Meteo cold attempt hit the seven-second timeout;
+  - the next successful uncached flow completed in about 2.2 seconds;
+  - the cached flow completed in 87 ms, with 51 ms measured inside the planning workflow.
 
-- 68 tests, 68 passed, 0 failed;
-- production Vite build passed;
-- input/recovery tests cover strict districts and decimals, save-state truth, retry boundaries, and bounded logging;
-- tool-loop tests cover allow-listing, duplicate rejection, call limits, deterministic recovery, reasoning/function output round trips, and secret redaction;
-- RAG tests cover all nine datasets, blocked-row exclusion, positive-overlap retrieval, Gazipur mustard provenance, bounded scoring, evidence-driven plan text, rationales, and instruction-like source text;
-- UI tests cover reload-safe session IDs, fresh-demo isolation, honest staged status, financial labels, mojibake, keyboard focus, reduced motion, and narrow layout contracts.
+## Latency diagnosis
 
-Medium HTTP evaluation passed without local secrets:
+The local deterministic RAG/ranking/scheduler/response path is not the source of the reported 20–30 second wait. The measured risks are:
 
-```json
-{"health":true,"phase":"Tier-0","indexed":1976,"datasets":9,"best":"Maize","score":74,"ragScore":43.6,"crops":4,"stages":6,"citations":6,"trace":5,"assumptions":1,"evidenceStages":5,"weatherSource":"Open-Meteo"}
-```
+1. cold geocoding and forecast network calls;
+2. model-provider response and tool-loop duration when `OPENAI_API_KEY` is enabled;
+3. VPS CPU contention, memory pressure, DNS/TLS latency, and distance to providers;
+4. proxy buffering if Nginx is not configured to pass NDJSON immediately.
 
-The live weather response is time-sensitive. A separate bounded server-side probe used the supplied OpenAI key transiently and passed: `gpt-5.6-sol` at medium effort selected all five required read-only tools (`inspect_weather`, `inspect_rag_evidence`, `inspect_ranked_crops`, `inspect_season_plan`, and `inspect_financials`) before returning its explanation. No key value was printed, traced, copied into the client, or committed.
+The UI now makes the delay visible and useful even when the total cannot be reduced. A production sub-10-second claim still requires measurements on the target VPS with the real model and proxy path.
 
-Historical production baseline verification passed before this hardening campaign:
+## Safety boundaries
 
-- checkout code revision: `cbb0450d062b383e6cbd02dde34adf7919d60186`;
-- PM2 process `agrisense`: online and saved;
-- HTTPS health: `Tier-0`, PostgreSQL, `gpt-5.6-sol/high`, nine datasets, and 1,976 indexed fact cards;
-- public production flow: four crops, six checkpoints, six citations, five evidence-backed stages, and all five Sol-selected inspection tools;
-- public URL: <https://rookiecoders.tech>;
-- the six pre-existing Droplet-only RAG commits remain preserved on `server-rag-backup-20260724T153137Z`.
+- No raw chain-of-thought is requested or rendered.
+- Recovery IDs are bearer credentials and are redacted from activities and traces.
+- Fertilizer actions require farmer confirmation.
+- Chemical recommendations remain prohibited without current official registry evidence.
+- Costs, yields, prices, and default stage dates remain labeled team assumptions.
 
-Current release proof is separate from that baseline: origin/main and the Droplet checkout matched; public `/api/health.releaseRevision` matched the deployed Git SHA; a partial PostgreSQL session survived PM2 restart and completed with four crops, six stages, eight finance fields, rationale/source IDs, Open-Meteo, and all five model-selected inspection tools. Chrome showed the generated plan and 10-operation trace; 320/360/375 px had no horizontal overflow; visible Computer Use confirmed the judge path. Three Chrome-extension message-channel errors were observed, but no application exception.
+## Not performed
 
-## Truth boundaries
-
-- Crop base coefficients, production costs, yields, prices, and default checkpoint offsets remain team assumptions.
-- BARC crop zoning, FRG nutrient facts, BAMIS/DAE pest/calendar records, and other supplied structured records retain their provenance and confidence warnings.
-- Calendar coverage is partial; the corpus does not justify exact stage dates for every crop/location.
-- Chemical pesticide advice is intentionally omitted without current DAE registry evidence.
-- This is Tier 0 only. Tier 1, Tier 2, bdapps payment, image diagnosis, marketplace, Bengali voice, and proactive alerts are deferred.
-
-## Deferred after Tier 0
-
-Tier 1, Tier 2, bdapps payment, Bengali voice, image diagnosis, proactive alerts, and a deliberate merge of the preserved server-only RAG branch remain future work.
-
-See `evaluation.html` for the judge-facing self-test and `final plan.html` for the validated execution handoff.
+- no production deployment;
+- no VPS resize or billing/account change;
+- no external alert delivery;
+- no image diagnosis;
+- no Bengali speech or voice assistant;
+- no chemical recommendation expansion.
