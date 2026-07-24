@@ -91,16 +91,6 @@ const DISTRICT_ALIASES = new Map([
   ["maulvibazar", "Moulvibazar"],
   ["moulavi bazar", "Moulvibazar"],
 ]);
-const DIVISIONS = new Set([
-  "Barishal",
-  "Chattogram",
-  "Dhaka",
-  "Khulna",
-  "Mymensingh",
-  "Rajshahi",
-  "Rangpur",
-  "Sylhet",
-]);
 const SAFE_LOCATION_COMPONENT = /^[\p{L}\p{M}][\p{L}\p{M} .()'\u2019-]*$/u;
 const DECIMAL_NUMBER = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
 
@@ -142,23 +132,11 @@ function canonicalDistrict(value) {
   return DISTRICT_BY_NAME.get(normalized) ?? DISTRICT_ALIASES.get(normalized) ?? null;
 }
 
-function districtComponent(value, requireSuffix = false) {
+function districtComponent(value) {
   const normalized = normalizeLocationComponent(value);
   const match = normalized.match(/^(.+)\s+district$/);
   if (match) return canonicalDistrict(match[1]);
-  return requireSuffix ? null : canonicalDistrict(normalized);
-}
-
-function divisionComponent(value) {
-  const normalized = normalizeLocationComponent(value);
-  const match = normalized.match(/^(.+)\s+division$/);
-  if (!match) return null;
-  const division = canonicalDistrict(match[1]);
-  return DIVISIONS.has(division) ? division : null;
-}
-
-function isUpazilaComponent(value) {
-  return /^.+\s+upazila$/i.test(value.trim());
+  return canonicalDistrict(normalized);
 }
 
 export function districtFromLocation(location) {
@@ -166,7 +144,7 @@ export function districtFromLocation(location) {
   const components = location.split(",").map((component) => component.trim());
   if (
     components.length === 0
-    || components.length > 3
+    || components.length > 2
     || components.some((component) => !SAFE_LOCATION_COMPONENT.test(component))
   ) {
     return null;
@@ -176,24 +154,13 @@ export function districtFromLocation(location) {
     components.pop();
   }
   if (
-    components.length === 0
-    || components.length > 2
+    components.length !== 1
     || components.some((component) => normalizeLocationComponent(component) === "bangladesh")
   ) {
     return null;
   }
 
-  if (components.length === 1) {
-    return districtComponent(components[0]) ?? divisionComponent(components[0]);
-  }
-
-  if (isUpazilaComponent(components[0])) {
-    return districtComponent(components[1]);
-  }
-
-  const district = districtComponent(components[0], true);
-  const division = divisionComponent(components[1]);
-  return district && division ? district : null;
+  return districtComponent(components[0]);
 }
 
 function normalizeChoice(value, field, supportedValues) {

@@ -39,10 +39,7 @@ test("accepts Bangladesh district and common district-style locations", () => {
     "Dhaka, Bangladesh",
     "Chattogram District, Bangladesh",
     "Bogura",
-    "Mymensingh Division",
     "Cumilla, Bangladesh",
-    "Sreepur Upazila, Gazipur, Bangladesh",
-    "Gazipur District, Dhaka Division, Bangladesh",
   ]) {
     assert.deepEqual(validateProfilePatch({ location }), { location }, location);
   }
@@ -54,9 +51,8 @@ test("extracts the canonical district from every supported location form", async
     ["Gazipur", "Gazipur"],
     ["Dhaka, Bangladesh", "Dhaka"],
     ["Chittagong District, Bangladesh", "Chattogram"],
-    ["Mymensingh Division", "Mymensingh"],
-    ["Sreepur Upazila, Gazipur, Bangladesh", "Gazipur"],
-    ["Gazipur District, Dhaka Division, Bangladesh", "Gazipur"],
+    ["Bogra District", "Bogura"],
+    ["Comilla, Bangladesh", "Cumilla"],
   ]);
 
   for (const [location, district] of cases) {
@@ -101,6 +97,11 @@ test("rejects free-form locality prefixes before Bangladesh district anchors", (
     "Tokyo, Dhaka, Bangladesh",
     "Paris, Chattogram",
     "New York, Gazipur District, Bangladesh",
+    "Tokyo Upazila, Dhaka, Bangladesh",
+    "Paris Upazila, Chattogram, Bangladesh",
+    "Gazipur District, Sylhet Division, Bangladesh",
+    "Mymensingh Division",
+    "Sreepur Upazila, Gazipur, Bangladesh",
   ]) {
     assert.throws(() => validateProfilePatch({ location }), ValidationError, location);
   }

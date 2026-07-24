@@ -63,17 +63,17 @@ test("computes a bounded BARC suitability score and plan evidence", () => {
   assert.ok(planEvidence.pest.length > 0);
 });
 
-test("uses the canonical district for upazila crop evidence lookup", () => {
+test("uses the canonical district for district-suffixed crop evidence lookup", () => {
   const district = getCropEvidence({ location: "Gazipur", targetSeason: "Rabi" }, "mustard");
-  const upazila = getCropEvidence(
-    { location: "Sreepur Upazila, Gazipur, Bangladesh", targetSeason: "Rabi" },
+  const districtSuffix = getCropEvidence(
+    { location: "Gazipur District, Bangladesh", targetSeason: "Rabi" },
     "mustard",
   );
 
-  assert.equal(upazila.basis, district.basis);
-  assert.equal(upazila.suitabilityScore, district.suitabilityScore);
+  assert.equal(districtSuffix.basis, district.basis);
+  assert.equal(districtSuffix.suitabilityScore, district.suitabilityScore);
   assert.deepEqual(
-    upazila.sources.map((source) => source.id),
+    districtSuffix.sources.map((source) => source.id),
     district.sources.map((source) => source.id),
   );
 });
