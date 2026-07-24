@@ -9,6 +9,7 @@ import { databaseMode, initializeDatabase, loadSession, saveSession } from "./db
 import { explainRecommendation, extractProfilePatch, openAiMode } from "./openai.js";
 import { getCropEvidence, getPlanEvidence, loadCorpus, retrieveFacts } from "./rag.js";
 import { createPersistenceGuard, summarizeError } from "./recovery.js";
+import { getReleaseRevision } from "./revision.js";
 import { ValidationError, validateProfilePatch } from "./validation.js";
 import { getWeather } from "./weather.js";
 
@@ -21,7 +22,14 @@ app.use(express.json({ limit: "64kb" }));
 
 app.get("/api/health", (_req, res) => {
   const corpus = loadCorpus().report;
-  res.json({ ok: true, phase: "Tier-0", database: databaseMode(), model: openAiMode(), rag: corpus });
+  res.json({
+    ok: true,
+    phase: "Tier-0",
+    releaseRevision: getReleaseRevision(),
+    database: databaseMode(),
+    model: openAiMode(),
+    rag: corpus,
+  });
 });
 
 app.get(["/evaluation", "/evaluation.html"], (_req, res) => {
