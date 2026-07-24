@@ -8,6 +8,7 @@
     "build": "vite build",
     "start": "node server/index.js",
     "test": "node --test",
+    "ingest:rag": "node scripts/ingest-rag.js",
     "check": "npm test && npm run build"
   },
   "dependencies": {

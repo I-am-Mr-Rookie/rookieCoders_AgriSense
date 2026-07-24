@@ -1,0 +1,379 @@
+{
+  "generatedAt": "2026-07-24T12:26:21.050Z",
+  "durationMs": 482,
+  "request": {
+    "profilePatch": {
+      "location": "Gazipur",
+      "farmSizeAcres": 1,
+      "soilType": "loam",
+      "waterAvailability": "irrigated",
+      "budgetBdt": 90000,
+      "targetSeason": "Rabi"
+    },
+    "startDate": "2026-11-01"
+  },
+  "weather": {
+    "source": "Open-Meteo",
+    "sourceUrl": "https://api.open-meteo.com/v1/forecast?latitude=23.99844&longitude=90.42234&daily=temperature_2m_mean%2Cprecipitation_sum&current=temperature_2m%2Cprecipitation&timezone=Asia%2FDhaka&forecast_days=7",
+    "retrievedAt": "2026-07-24T12:26:20.863Z",
+    "location": "Gazipur, Dhaka Division, Bangladesh",
+    "latitude": 23.99844,
+    "longitude": 90.42234,
+    "currentTemperatureC": 29.1,
+    "meanTemperatureC": 27.9,
+    "precipitationMm": 44.300000000000004,
+    "daily": {
+      "time": [
+        "2026-07-24",
+        "2026-07-25",
+        "2026-07-26",
+        "2026-07-27",
+        "2026-07-28",
+        "2026-07-29",
+        "2026-07-30"
+      ],
+      "temperature_2m_mean": [
+        27.7,
+        28.3,
+        28.5,
+        28,
+        27.7,
+        27.9,
+        27.2
+      ],
+      "precipitation_sum": [
+        3,
+        3.4,
+        3.5,
+        4.2,
+        13.4,
+        5.7,
+        11.1
+      ]
+    }
+  },
+  "rankedCrops": [
+    {
+      "id": "maize",
+      "name": "Maize",
+      "suitability": 93,
+      "riskLevel": "low",
+      "evidenceScore": 8,
+      "evidenceChunkIds": [
+        "chunk-barc-zone-rabi_maize-gazipur-gazipur",
+        "chunk-barc-zone-rabi_maize-gazipur-kaliakoir",
+        "chunk-barc-zone-rabi_maize-gazipur-kaliganj",
+        "chunk-barc-zone-rabi_maize-gazipur-kapasia",
+        "chunk-barc-zone-rabi_maize-gazipur-sripur",
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0065-1",
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0091-1",
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0078-1"
+      ],
+      "financials": {
+        "costBreakdownBdt": {
+          "seed": 8800,
+          "fertilizer": 14300,
+          "irrigation": 9900,
+          "labor": 22000
+        },
+        "totalCostBdt": 55000,
+        "expectedYieldKg": 3000,
+        "pricePerKgBdt": 30,
+        "revenueBdt": 90000,
+        "netProfitBdt": 35000,
+        "roiPercent": 63.64,
+        "breakEvenYieldKg": 1833.3333333333333
+      }
+    },
+    {
+      "id": "mustard",
+      "name": "Mustard",
+      "suitability": 77,
+      "riskLevel": "low",
+      "evidenceScore": 8,
+      "evidenceChunkIds": [
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0101-1",
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0102-1",
+        "chunk-barc-zone-mustard-gazipur-gazipur",
+        "chunk-barc-zone-mustard-gazipur-kaliakoir",
+        "chunk-barc-zone-mustard-gazipur-kaliganj",
+        "chunk-barc-zone-mustard-gazipur-kapasia",
+        "chunk-barc-zone-mustard-gazipur-sripur",
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0065-1"
+      ],
+      "financials": {
+        "costBreakdownBdt": {
+          "seed": 4800,
+          "fertilizer": 7800,
+          "irrigation": 5400,
+          "labor": 12000
+        },
+        "totalCostBdt": 30000,
+        "expectedYieldKg": 800,
+        "pricePerKgBdt": 75,
+        "revenueBdt": 60000,
+        "netProfitBdt": 30000,
+        "roiPercent": 100,
+        "breakEvenYieldKg": 400
+      }
+    },
+    {
+      "id": "boro-rice",
+      "name": "Boro rice",
+      "suitability": 77,
+      "riskLevel": "low",
+      "evidenceScore": 8,
+      "evidenceChunkIds": [
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0063-1",
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0087-1",
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0065-1",
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0090-1",
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0077-1",
+        "chunk-barc-zone-boro_rice-gazipur-gazipur",
+        "chunk-barc-zone-boro_rice-gazipur-kaliakoir",
+        "chunk-barc-zone-boro_rice-gazipur-kaliganj"
+      ],
+      "financials": {
+        "costBreakdownBdt": {
+          "seed": 10400,
+          "fertilizer": 16900,
+          "irrigation": 11700,
+          "labor": 26000
+        },
+        "totalCostBdt": 65000,
+        "expectedYieldKg": 2200,
+        "pricePerKgBdt": 35,
+        "revenueBdt": 77000,
+        "netProfitBdt": 12000,
+        "roiPercent": 18.46,
+        "breakEvenYieldKg": 1857.142857142857
+      }
+    },
+    {
+      "id": "potato",
+      "name": "Potato",
+      "suitability": 76,
+      "riskLevel": "low",
+      "evidenceScore": 8,
+      "evidenceChunkIds": [
+        "raw-supplied-kawsar-except-barc-rag-raw-data-from-kawsar-except-brac-raw-bbs-yearbook-agri-p0018-1",
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0061-1",
+        "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0076-1",
+        "chunk-barc-zone-potato-gazipur-gazipur",
+        "chunk-barc-zone-potato-gazipur-kaliakoir",
+        "chunk-barc-zone-potato-gazipur-kaliganj",
+        "chunk-barc-zone-potato-gazipur-kapasia",
+        "chunk-barc-zone-potato-gazipur-sripur"
+      ],
+      "financials": {
+        "costBreakdownBdt": {
+          "seed": 14400,
+          "fertilizer": 23400,
+          "irrigation": 16200,
+          "labor": 36000
+        },
+        "totalCostBdt": 90000,
+        "expectedYieldKg": 8000,
+        "pricePerKgBdt": 25,
+        "revenueBdt": 200000,
+        "netProfitBdt": 110000,
+        "roiPercent": 122.22,
+        "breakEvenYieldKg": 3600
+      }
+    }
+  ],
+  "selectedCropId": "maize",
+  "seasonPlan": [
+    {
+      "stage": "land_preparation",
+      "date": "2026-11-01",
+      "action": "Prepare and level the field; verify drainage."
+    },
+    {
+      "stage": "sowing",
+      "date": "2026-11-08",
+      "action": "Sow Maize within the selected Rabi window."
+    },
+    {
+      "stage": "fertilizer",
+      "date": "2026-11-23",
+      "action": "Apply the first scheduled fertilizer dose after checking the forecast and retrieved guide."
+    },
+    {
+      "stage": "irrigation",
+      "date": "2026-12-06",
+      "action": "Irrigate only after comparing field moisture with forecast rainfall."
+    },
+    {
+      "stage": "weed_pest",
+      "date": "2026-12-21",
+      "action": "Inspect weeds and pests; record symptoms before treatment."
+    },
+    {
+      "stage": "harvest",
+      "date": "2027-03-01",
+      "action": "Harvest Maize at crop maturity and record realized yield."
+    }
+  ],
+  "financeReconciles": true,
+  "representativeCitations": {
+    "mustard": [
+      {
+        "record_id": "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0101-1",
+        "publisher": "Bangladesh Agricultural Research Council (BARC)",
+        "source_title": "Fertilizer Recommendation Guide 2024",
+        "source_url": "https://apps.barc.gov.bd/fertilizer_recommendation/FRG%20English%2030.10.2024.pdf",
+        "source_page_or_table": "PDF page 101, part 1",
+        "retrieval_score": 17.32,
+        "confidence": "HIGH",
+        "quality_flags": []
+      },
+      {
+        "record_id": "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0102-1",
+        "publisher": "Bangladesh Agricultural Research Council (BARC)",
+        "source_title": "Fertilizer Recommendation Guide 2024",
+        "source_url": "https://apps.barc.gov.bd/fertilizer_recommendation/FRG%20English%2030.10.2024.pdf",
+        "source_page_or_table": "PDF page 102, part 1",
+        "retrieval_score": 16,
+        "confidence": "HIGH",
+        "quality_flags": []
+      },
+      {
+        "record_id": "chunk-barc-zone-mustard-gazipur-gazipur",
+        "publisher": "Bangladesh Agricultural Research Council (BARC)",
+        "source_title": "BARC Crop Zoning workbook: Mustard",
+        "source_url": "https://apps.barc.gov.bd/cropzoning/files/data/Mustard-zone.xls",
+        "source_page_or_table": "Zone-En worksheet row 367",
+        "retrieval_score": 14.675,
+        "confidence": "MEDIUM",
+        "quality_flags": [
+          "SOURCE_AREA_UNIT_UNSTATED",
+          "MAP_YEAR_UNSTATED",
+          "ZONE_CODE_LEGEND_NOT_EXTRACTED"
+        ]
+      }
+    ],
+    "potato": [
+      {
+        "record_id": "raw-supplied-kawsar-except-barc-rag-raw-data-from-kawsar-except-brac-raw-bbs-yearbook-agri-p0018-1",
+        "publisher": "Bangladesh Bureau of Statistics (BBS)",
+        "source_title": "Yearbook of Agricultural Statistics 2024, 36th Series",
+        "source_url": "http://nsds.bbs.gov.bd/en/topic/46/Yearbooks%20and%20similar%20compendia",
+        "source_page_or_table": "PDF page 18, part 1",
+        "retrieval_score": 20.2633,
+        "confidence": "HIGH",
+        "quality_flags": []
+      },
+      {
+        "record_id": "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0061-1",
+        "publisher": "Bangladesh Agricultural Research Council (BARC)",
+        "source_title": "Fertilizer Recommendation Guide 2024",
+        "source_url": "https://apps.barc.gov.bd/fertilizer_recommendation/FRG%20English%2030.10.2024.pdf",
+        "source_page_or_table": "PDF page 61, part 1",
+        "retrieval_score": 19.84,
+        "confidence": "HIGH",
+        "quality_flags": []
+      },
+      {
+        "record_id": "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0076-1",
+        "publisher": "Bangladesh Agricultural Research Council (BARC)",
+        "source_title": "Fertilizer Recommendation Guide 2024",
+        "source_url": "https://apps.barc.gov.bd/fertilizer_recommendation/FRG%20English%2030.10.2024.pdf",
+        "source_page_or_table": "PDF page 76, part 1",
+        "retrieval_score": 19.84,
+        "confidence": "HIGH",
+        "quality_flags": []
+      }
+    ],
+    "maize": [
+      {
+        "record_id": "chunk-barc-zone-rabi_maize-gazipur-gazipur",
+        "publisher": "Bangladesh Agricultural Research Council (BARC)",
+        "source_title": "BARC Crop Zoning workbook: Maize",
+        "source_url": "https://apps.barc.gov.bd/cropzoning/files/data/Maize-zone.xls",
+        "source_page_or_table": "Zone-En worksheet row 179",
+        "retrieval_score": 21.448,
+        "confidence": "MEDIUM",
+        "quality_flags": [
+          "SOURCE_AREA_UNIT_UNSTATED",
+          "MAP_YEAR_UNSTATED",
+          "ZONE_CODE_LEGEND_NOT_EXTRACTED"
+        ]
+      },
+      {
+        "record_id": "chunk-barc-zone-rabi_maize-gazipur-kaliakoir",
+        "publisher": "Bangladesh Agricultural Research Council (BARC)",
+        "source_title": "BARC Crop Zoning workbook: Maize",
+        "source_url": "https://apps.barc.gov.bd/cropzoning/files/data/Maize-zone.xls",
+        "source_page_or_table": "Zone-En worksheet row 324",
+        "retrieval_score": 21.448,
+        "confidence": "MEDIUM",
+        "quality_flags": [
+          "SOURCE_AREA_UNIT_UNSTATED",
+          "MAP_YEAR_UNSTATED",
+          "ZONE_CODE_LEGEND_NOT_EXTRACTED"
+        ]
+      },
+      {
+        "record_id": "chunk-barc-zone-rabi_maize-gazipur-kaliganj",
+        "publisher": "Bangladesh Agricultural Research Council (BARC)",
+        "source_title": "BARC Crop Zoning workbook: Maize",
+        "source_url": "https://apps.barc.gov.bd/cropzoning/files/data/Maize-zone.xls",
+        "source_page_or_table": "Zone-En worksheet row 325",
+        "retrieval_score": 21.448,
+        "confidence": "MEDIUM",
+        "quality_flags": [
+          "SOURCE_AREA_UNIT_UNSTATED",
+          "MAP_YEAR_UNSTATED",
+          "ZONE_CODE_LEGEND_NOT_EXTRACTED"
+        ]
+      }
+    ],
+    "boro-rice": [
+      {
+        "record_id": "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0063-1",
+        "publisher": "Bangladesh Agricultural Research Council (BARC)",
+        "source_title": "Fertilizer Recommendation Guide 2024",
+        "source_url": "https://apps.barc.gov.bd/fertilizer_recommendation/FRG%20English%2030.10.2024.pdf",
+        "source_page_or_table": "PDF page 63, part 1",
+        "retrieval_score": 23.12,
+        "confidence": "HIGH",
+        "quality_flags": []
+      },
+      {
+        "record_id": "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0087-1",
+        "publisher": "Bangladesh Agricultural Research Council (BARC)",
+        "source_title": "Fertilizer Recommendation Guide 2024",
+        "source_url": "https://apps.barc.gov.bd/fertilizer_recommendation/FRG%20English%2030.10.2024.pdf",
+        "source_page_or_table": "PDF page 87, part 1",
+        "retrieval_score": 22.658,
+        "confidence": "HIGH",
+        "quality_flags": []
+      },
+      {
+        "record_id": "raw-supplied-kawsar-only-barc-rag-raw-data-from-kawsar-only-brac-barc-fertilizer-recommend-p0065-1",
+        "publisher": "Bangladesh Agricultural Research Council (BARC)",
+        "source_title": "Fertilizer Recommendation Guide 2024",
+        "source_url": "https://apps.barc.gov.bd/fertilizer_recommendation/FRG%20English%2030.10.2024.pdf",
+        "source_page_or_table": "PDF page 65, part 1",
+        "retrieval_score": 21.754,
+        "confidence": "HIGH",
+        "quality_flags": []
+      }
+    ]
+  },
+  "retrieval": {
+    "mode": "in-process-lexical",
+    "corpusCount": 3163,
+    "semantic": false,
+    "filters": {
+      "country": "Bangladesh",
+      "season": "Rabi",
+      "location": "Gazipur",
+      "corpusLanes": [
+        "core",
+        "bd_expansion"
+      ]
+    }
+  }
+}

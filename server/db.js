@@ -9,6 +9,21 @@ function getPool() {
   return pool;
 }
 
+export function getDatabasePool() {
+  return getPool();
+}
+
+export async function databaseStatus() {
+  const db = getPool();
+  if (!db) return { mode: "memory-fallback", connected: false };
+  try {
+    await db.query("SELECT 1");
+    return { mode: "postgresql", connected: true };
+  } catch (error) {
+    return { mode: "postgresql", connected: false, error: error.message };
+  }
+}
+
 export async function initializeDatabase() {
   const db = getPool();
   if (!db) return "memory";

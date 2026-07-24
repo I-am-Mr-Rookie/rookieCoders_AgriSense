@@ -1,6 +1,6 @@
 # Rookie Coders — AgriSense
 
-`T0-Initial` is the first deployable vertical prototype for the IUT 12th ICT Fest Bdapps Agentic AI Hackathon. It is intentionally shallow and is **not** the completed Tier 0 submission.
+`T0-RAG` is the evidence-grounded Tier-0 path for the IUT 12th ICT Fest Bdapps Agentic AI Hackathon. It bundles the validated 3,163-chunk Bangladesh/Rabi corpus, prefers PostgreSQL full-text retrieval, and retains a restart-safe lexical fallback without falsely claiming semantic search.
 
 ## Current capability truth
 
@@ -12,7 +12,7 @@
 | Season plan | T0-Initial | Dated land preparation, sowing, fertilizer, irrigation, weed/pest and harvest checkpoints. Dates require full validation. |
 | Financial projection | T0-Initial | Itemized costs, yield, revenue, profit, ROI and break-even calculated in code and scaled with farm size. Prices/yields are seeded assumptions. |
 | Explained reasoning | T0-Initial | GPT-5.6 Sol/high uses supplied evidence when `OPENAI_API_KEY` exists; otherwise a deterministic fallback is labeled. |
-| Knowledge retrieval | T0-Initial | Keyword retriever returns cited BARC, BRRI, FAO and Open-Meteo source cards. This is not the completed RAG corpus. |
+| Knowledge retrieval | T0-RAG | PostgreSQL full-text or bundled lexical retrieval over 3,163 provenance-rich chunks, with Bangladesh/Rabi/crop/geography/lane filters, stable IDs, scores, direct citations, and quality flags. Semantic retrieval is explicitly unavailable until pgvector and an official embedding model are verified. |
 | Visible trace | T0-Initial | UI exposes operations, parameters, returned values, timestamps and durations. |
 | Memory | T0-Initial | PostgreSQL persistence with `DATABASE_URL`; in-memory fallback for local development. |
 
@@ -68,3 +68,14 @@ Point the existing Nginx/HTTPS route to port `3001`, then verify `https://YOUR_H
 4. State that this is `T0-Initial`, not completed Tier 0.
 
 Public repository: <https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense>
+
+## Tier-0 RAG verification
+
+```bash
+node --test tests/*.test.js
+node scripts/verify-demo.js
+npm run ingest:rag
+npm run build
+```
+
+Run ingestion twice; the second result must report 3,163 parsed/stored rows, zero inserted/updated rows, and 3,163 unchanged rows. See `docs/rag-architecture.md`, `docs/rag-evaluation.md`, `docs/gazipur-demo-evidence.json`, and `docs/deployment-rollback.md`. Target PostgreSQL, OpenAI, PM2, Nginx, HTTPS, and browser claims require execution on Kawsar's existing Droplet and must not be inferred from local inspection.

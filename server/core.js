@@ -73,14 +73,16 @@ export function calculateFinancials({ farmSizeAcres, yieldPerAcreKg, pricePerKgB
   };
 }
 
-export function rankCrops(profile, weather) {
+export function rankCrops(profile, weather, evidenceByCrop = {}) {
   return CROPS.map((crop) => {
     const rainScore = clamp(40 - Math.abs(weather.precipitationMm - crop.idealRainMm) * 0.55, 0, 40);
     const temperatureScore = clamp(30 - Math.abs(weather.meanTemperatureC - crop.idealTempC) * 3, 0, 30);
     const soilScore = ["loam", "sandy loam", "clay loam"].includes(String(profile.soilType).toLowerCase()) ? 15 : 9;
     const waterPenalty = profile.waterAvailability === "limited" && crop.waterNeed === "high" ? 12 : 0;
     const budgetPenalty = profile.budgetBdt < crop.baseCostBdt * profile.farmSizeAcres ? 15 : 0;
-    const suitability = Math.round(clamp(rainScore + temperatureScore + soilScore + 15 - waterPenalty - budgetPenalty, 0, 100));
+    const evidence = evidenceByCrop[crop.id] ?? [];
+    const evidenceScore = clamp(evidence.length * 2, 0, 8);
+    const suitability = Math.round(clamp(rainScore + temperatureScore + soilScore + 15 + evidenceScore - waterPenalty - budgetPenalty, 0, 100));
     const financials = calculateFinancials({
       farmSizeAcres: profile.farmSizeAcres,
       yieldPerAcreKg: crop.yieldKg,
@@ -99,6 +101,8 @@ export function rankCrops(profile, weather) {
       riskLevel: suitability >= 75 ? "low" : suitability >= 55 ? "medium" : "high",
       roughProfitBdt: financials.netProfitBdt,
       financials,
+      evidenceScore,
+      evidenceChunkIds: evidence.map((row) => row.record_id),
       weatherEvidence: {
         precipitationMm: weather.precipitationMm,
         meanTemperatureC: weather.meanTemperatureC,

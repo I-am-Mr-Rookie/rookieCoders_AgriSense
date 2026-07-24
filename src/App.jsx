@@ -20,7 +20,7 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const best = useMemo(() => result?.crops?.[0], [result]);
+  const best = useMemo(() => result?.crops?.find((crop) => crop.id === result.selectedCropId) ?? result?.crops?.[0], [result]);
 
   async function send(payload) {
     setBusy(true);
@@ -52,7 +52,7 @@ export default function App() {
   return (
     <main>
       <header>
-        <div><span className="eyebrow">Rookie Coders · T0-Initial</span><h1>AgriSense</h1></div>
+        <div><span className="eyebrow">Rookie Coders · T0-RAG</span><h1>AgriSense</h1></div>
         <button className="demo" disabled={busy} onClick={() => send({ profilePatch: DEMO_PROFILE })}>Run Gazipur demo</button>
       </header>
 
@@ -81,14 +81,14 @@ export default function App() {
       </div>
 
       {result && <>
-        <section className="panel"><h3>Four ranked crops</h3><div className="cards">{result.crops.map((crop, index) => <article key={crop.id}><span>#{index + 1}</span><h4>{crop.name}</h4><b>{crop.suitability}%</b><p>{crop.waterNeed} water · {crop.riskLevel} risk</p><small>Profit estimate: <Money value={crop.roughProfitBdt} /></small></article>)}</div></section>
+        <section className="panel"><h3>Four ranked crops</h3><div className="cards">{result.crops.map((crop, index) => <article key={crop.id}><span>#{index + 1}</span><h4>{crop.name}</h4><b>{crop.suitability}%</b><p>{crop.waterNeed} water · {crop.riskLevel} risk · {crop.evidenceChunkIds.length} evidence chunks</p><small>Profit estimate: <Money value={crop.roughProfitBdt} /></small><button disabled={busy || crop.id === result.selectedCropId} onClick={() => send({ selectedCropId: crop.id })}>{crop.id === result.selectedCropId ? "Selected" : "Use this crop"}</button></article>)}</div></section>
         <section className="panel"><h3>Dated season checkpoints</h3><div className="timeline">{result.seasonPlan.map((item) => <article key={item.stage}><time>{item.date}</time><b>{item.stage.replaceAll("_", " ")}</b><p>{item.action}</p></article>)}</div></section>
         <div className="layout">
-          <section className="panel"><h3>Retrieved knowledge</h3>{result.knowledge.map((item) => <article className="source" key={item.id}><a href={item.sourceUrl} target="_blank">{item.title}</a><p>{item.text}</p></article>)}</section>
+          <section className="panel"><h3>Retrieved Bangladesh evidence</h3>{result.knowledge.map((item) => <article className="source" key={item.record_id}>{item.source_url ? <a href={item.source_url} target="_blank" rel="noopener noreferrer">{item.source_title}</a> : <b>{item.source_title}</b>}<p>{item.text}</p><small>{item.publisher} · {item.source_page_or_table || "context unavailable"} · {item.record_id} · score {item.retrieval_score} · confidence {item.confidence || "unknown"}</small>{item.quality_flags?.length > 0 && <p className="error">Flags: {item.quality_flags.join(", ")}</p>}</article>)}</section>
           <section className="panel"><h3>Visible agent trace</h3><details open><summary>{result.trace.length} recorded operations</summary><pre>{JSON.stringify(result.trace, null, 2)}</pre></details></section>
         </div>
       </>}
-      <footer>T0-Initial prototype · Figures are transparent demo assumptions pending full agronomic validation.</footer>
+      <footer>T0-RAG · Retrieval and provenance are live; deterministic finance assumptions remain visibly bounded pending field validation.</footer>
     </main>
   );
 }

@@ -32,7 +32,8 @@ export async function explainRecommendation(context) {
   const openai = client();
   if (!openai) {
     const best = context.crops[0];
-    return `${best.name} ranks first because its ${best.suitability}% suitability uses the farm profile, ${context.weather.precipitationMm.toFixed(1)} mm forecast rainfall, and ${context.weather.meanTemperatureC.toFixed(1)} C mean temperature. Financial values come from the deterministic calculator.`;
+    const cited = context.knowledge.slice(0, 3).map((row) => `${row.publisher} (${row.record_id})`).join(", ");
+    return `${best.name} ranks first because its ${best.suitability}% suitability uses the farm profile, ${context.weather.precipitationMm.toFixed(1)} mm forecast rainfall, ${context.weather.meanTemperatureC.toFixed(1)} C mean temperature, and retrieved evidence${cited ? ` from ${cited}` : " with no matching corpus citation"}. Financial values come from the deterministic calculator; flagged evidence requires revalidation before high-stakes use.`;
   }
   const response = await openai.responses.create({
     model,
@@ -41,7 +42,7 @@ export async function explainRecommendation(context) {
     input: [
       {
         role: "system",
-        content: "You are AgriSense. Explain the ranked crops and first recommendation concisely for a Bangladeshi farmer. Use only supplied farm, weather, retrieval, plan and finance evidence. State uncertainty. Never recalculate or invent numbers.",
+        content: "You are AgriSense. Explain the ranked crops and first recommendation concisely for a Bangladeshi farmer. Use only supplied farm inputs, current weather tool output, retrieved corpus evidence, deterministic plan, and deterministic finance values. Cite evidence by record_id and publisher. State uncertainty and identify PRIOR_PARTIAL or revalidation flags. Never recalculate or invent numbers. Never turn a DAM price into production cost, a map legend into a field observation, elemental nutrients into fertilizer-product quantities, or pesticide registration into a chemical recommendation.",
       },
       { role: "user", content: JSON.stringify(context) },
     ],
