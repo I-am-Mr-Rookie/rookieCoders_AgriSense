@@ -182,6 +182,30 @@ test("agent run stays inside one assistant message with accessible terminal cont
   assert.equal(appSource.includes("setConversation((items) => [...items, { role: \"agent\", text: assistantText(data.assistant) }]"), false);
 });
 
+test("intake-only completions never claim that a plan was generated", () => {
+  assertIncludesAll(appSource, [
+    'outcome: data.crops ? "plan" : "intake"',
+    'latestRun.outcome === "plan"',
+    "Farm details requested",
+  ]);
+  assertIncludesAll(runMessageSource, [
+    'run.outcome === "plan"',
+    "Plan completed",
+    "Request completed",
+  ]);
+});
+
+test("only the latest terminal run can expose the global retry action", () => {
+  assertIncludesAll(appSource, [
+    "retryAvailable={item.run.id === latestRun?.id}",
+    "onRetry={retryLastRequest}",
+  ]);
+  assertIncludesAll(runMessageSource, [
+    "retryAvailable = false",
+    "retryAvailable &&",
+  ]);
+});
+
 test("activity is chat-native and no standalone feed or global activity state remains", () => {
   assert.equal(appSource.includes("function ActivityFeed"), false);
   assert.equal(appSource.includes("<ActivityFeed"), false);

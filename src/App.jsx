@@ -224,10 +224,15 @@ export default function App() {
             detail: "The stopped run remains available to inspect or retry.",
           }
         : latestRun?.status === "complete"
-        ? {
-            title: "Plan generated",
-            detail: result?.weather?.source || "Weather source unavailable",
-          }
+          ? latestRun.outcome === "plan"
+            ? {
+                title: "Plan generated",
+                detail: result?.weather?.source || "Weather source unavailable",
+              }
+            : {
+                title: "Farm details requested",
+                detail: "Answer the requested fields to continue planning.",
+              }
         : error
           ? {
               title: "Request failed",
@@ -308,7 +313,10 @@ export default function App() {
           completedAt: Date.now(),
         });
         return completedRun.status === "complete"
-          ? toggleRunCollapsed(completedRun)
+          ? toggleRunCollapsed({
+              ...completedRun,
+              outcome: data.crops ? "plan" : "intake",
+            })
           : completedRun;
       }));
       if (data.crops) setResult(data);
@@ -543,6 +551,7 @@ export default function App() {
                     ))}
                     onCancel={cancelRequest}
                     onRetry={retryLastRequest}
+                    retryAvailable={item.run.id === latestRun?.id}
                   />
                 ) : item.role === "agent" ? (
                   <Markdown>{item.text}</Markdown>

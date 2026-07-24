@@ -127,7 +127,10 @@ function completionLabel(run) {
   const elapsed = Number.isFinite(elapsedMs)
     ? `${(elapsedMs / 1_000).toFixed(1)}s`
     : "time unavailable";
-  return `Plan completed · ${run.events.length} steps · ${elapsed}`;
+  const outcome = run.outcome === "plan"
+    ? "Plan completed"
+    : "Request completed";
+  return `${outcome} · ${run.events.length} steps · ${elapsed}`;
 }
 
 export default function AgentRunMessage({
@@ -135,10 +138,13 @@ export default function AgentRunMessage({
   onToggle,
   onCancel,
   onRetry,
+  retryAvailable = false,
 }) {
   const isComplete = run.status === "complete";
   const showDetails = !isComplete || !run.collapsed;
-  const canRetry = run.status === "failed" || run.status === "cancelled";
+  const canRetry = retryAvailable && (
+    run.status === "failed" || run.status === "cancelled"
+  );
 
   return (
     <section
