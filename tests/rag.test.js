@@ -37,6 +37,18 @@ test("returns no facts when a meaningful query has zero token overlap", () => {
   assert.deepEqual(result.results, []);
 });
 
+test("does not treat a stop-word-only lexical query as structured browsing", () => {
+  const result = retrieveFacts("the and of", { topK: 5 });
+
+  assert.deepEqual(result.results, []);
+});
+
+test("does not treat a Bengali lexical query as structured browsing", () => {
+  const result = retrieveFacts("এটি কৃষি পরামর্শ", { topK: 5 });
+
+  assert.deepEqual(result.results, []);
+});
+
 test("preserves structured browsing for empty and punctuation-only queries", () => {
   for (const query of ["", "---"]) {
     const result = retrieveFacts(query, {

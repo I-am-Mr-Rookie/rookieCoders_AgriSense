@@ -24,8 +24,12 @@ const STOP_WORDS = new Set([
 ]);
 
 function tokens(value) {
-  return (String(value ?? "").toLowerCase().match(/[a-z0-9]+/g) ?? [])
+  return (String(value ?? "").toLowerCase().match(/[\p{L}\p{M}\p{N}]+/gu) ?? [])
     .filter((token) => !STOP_WORDS.has(token));
+}
+
+function hasLexicalContent(value) {
+  return /[\p{L}\p{N}]/u.test(String(value ?? ""));
 }
 
 function cropKey(value) {
@@ -92,6 +96,7 @@ export function loadCorpus() {
 
 export function retrieveFacts(query, { crop, dataset, geo, topK = 5 } = {}) {
   const queryTokens = new Set(tokens(query));
+  const allowZeroScoreBrowse = !hasLexicalContent(query);
   const wantedCrop = cropKey(crop);
   const results = loadCorpus().docs
     .filter((doc) => !dataset || doc.dataset === dataset)
@@ -102,7 +107,7 @@ export function retrieveFacts(query, { crop, dataset, geo, topK = 5 } = {}) {
       const score = [...queryTokens].reduce((sum, token) => sum + (documentTokens.has(token) ? 1 : 0), 0);
       return { ...doc, score };
     })
-    .filter((doc) => queryTokens.size === 0 || doc.score > 0)
+    .filter((doc) => allowZeroScoreBrowse || doc.score > 0)
     .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
     .slice(0, Math.max(1, Math.min(Number(topK) || 5, 20)));
   return { query, results, report: loadCorpus().report };
