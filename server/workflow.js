@@ -10,6 +10,15 @@ const FIELD_LABELS = {
   targetSeason: "target season",
 };
 
+function revisionSummary(previousSummary, changedFields) {
+  const labels = changedFields.map((field) => FIELD_LABELS[field] ?? field).join(", ");
+  const note = `Farmer updated ${labels}; plan regeneration pending.`;
+  return [String(previousSummary || "").trim(), note]
+    .filter(Boolean)
+    .join(" ")
+    .slice(-2000);
+}
+
 export function createPlanningWorkflow(deps) {
   const clock = () => deps.now?.() ?? new Date();
 
@@ -18,10 +27,13 @@ export function createPlanningWorkflow(deps) {
     throwIfAborted();
     const startedAt = clock().getTime();
     const emit = createActivityEmitter(onEvent, clock);
-    await emit("request.accepted", "Request accepted", "running", {
-      hasMessage: Boolean(String(body.message || "").trim()),
-      hasStructuredProfile: Boolean(body.profilePatch),
-    });
+    const isChatTurn = body.action === "chat";
+    if (!isChatTurn) {
+      await emit("request.accepted", "Request accepted", "running", {
+        hasMessage: Boolean(String(body.message || "").trim()),
+        hasStructuredProfile: Boolean(body.profilePatch),
+      });
+    }
 
     const sessionId = String(body.sessionId || deps.createSessionId());
     const session = await deps.loadSession(sessionId);
@@ -31,10 +43,12 @@ export function createPlanningWorkflow(deps) {
       memory = await deps.memoryService.load(body.memoryId);
       if (!memory) throw new Error("Farmer memory was not found.");
       session.profile = { ...session.profile, ...memory.profile };
-      await emit("memory.loaded", "Saved farm memory loaded", "completed", {
-        profileFields: Object.keys(memory.profile || {}),
-        hasPreviousPlan: Boolean(memory.lastResult),
-      });
+      if (!isChatTurn) {
+        await emit("memory.loaded", "Saved farm memory loaded", "completed", {
+          profileFields: Object.keys(memory.profile || {}),
+          hasPreviousPlan: Boolean(memory.lastResult),
+        });
+      }
     }
 
     const message = redactRecoveryIds(body.message);
@@ -43,8 +57,72 @@ export function createPlanningWorkflow(deps) {
         ? body.preferences.autoAdjustIrrigation
         : memory?.preferences?.autoAdjustIrrigation !== false,
     };
+    if (isChatTurn) {
+      const currentPlan = session.lastResult ?? memory?.lastResult ?? null;
+      const turn = deps.interpretConversationTurn(message, session.profile, {
+        pendingField: body.pendingField,
+        awaitingField: body.awaitingField === true,
+      });
+      let patch = {};
+      if (turn.kind === "revision_staged") {
+        patch = deps.validateProfilePatch(turn.patch);
+      } else if (!currentPlan && turn.kind === "general") {
+        patch = deps.validateProfilePatch(
+          body.profilePatch ?? await deps.extractProfilePatch(message, session.profile, signal),
+        );
+      }
+      throwIfAborted();
+
+      if (Object.keys(patch).length) {
+        session.profile = { ...session.profile, ...patch };
+        await deps.saveSession(session);
+      }
+
+      const missingFields = deps.getMissingFields(session.profile);
+      const changedFields = Object.keys(patch);
+      const readyToPlan = changedFields.length > 0 && missingFields.length === 0;
+      const planStale = readyToPlan && Boolean(currentPlan);
+      const summary = revisionSummary(memory?.conversationSummary, changedFields);
+
+      if (body.memoryId && changedFields.length) {
+        await deps.memoryService.savePlan(body.memoryId, {
+          profile: session.profile,
+          lastResult: currentPlan,
+          conversationSummary: summary,
+        }, { signal });
+      }
+
+      const kind = turn.kind === "general" && changedFields.length
+        ? readyToPlan ? "revision_staged" : "intake_updated"
+        : turn.kind;
+      const assistant = turn.assistant || (
+        missingFields.length
+          ? `I still need: ${missingFields.map((field) => FIELD_LABELS[field]).join(", ")}.`
+          : changedFields.length
+            ? "Your farm details are ready. Review them, then create the plan."
+            : "I can help revise your budget, farm size, soil, water availability, location, or season."
+      );
+
+      return {
+        sessionId,
+        profile: session.profile,
+        memoryConnected: Boolean(body.memoryId),
+        kind,
+        assistant,
+        pendingField: turn.pendingField,
+        changedFields,
+        missingFields,
+        readyToPlan,
+        planStale,
+      };
+    }
+
     const patch = deps.validateProfilePatch(
-      body.profilePatch ?? await deps.extractProfilePatch(message, session.profile, signal),
+      body.profilePatch ?? (
+        body.action === "plan"
+          ? {}
+          : await deps.extractProfilePatch(message, session.profile, signal)
+      ),
     );
     throwIfAborted();
     session.profile = { ...session.profile, ...patch };

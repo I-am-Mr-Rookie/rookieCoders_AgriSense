@@ -24,6 +24,13 @@ function dependencies(overrides = {}) {
       loadSession: async (id) => ({ id, profile: {}, lastResult: null }),
       saveSession: async (session) => savedSessions.push(structuredClone(session)),
       extractProfilePatch: async () => completeProfile(),
+      interpretConversationTurn: () => ({
+        kind: "general",
+        assistant: "",
+        pendingField: "",
+        patch: {},
+        changedFields: [],
+      }),
       validateProfilePatch: (value) => value,
       getMissingFields: () => [],
       getWeather: async () => ({
@@ -143,6 +150,139 @@ test("returns targeted missing fields before running weather or the agent", asyn
   assert.equal(weatherCalls, 0);
   assert.equal(events.at(-1).type, "request.completed");
   assert.equal(events.some((event) => event.type === "agent.response.started"), false);
+});
+
+test("chat turns ask for a missing revision value without starting planning", async () => {
+  let weatherCalls = 0;
+  let extractionCalls = 0;
+  const existingPlan = { crops: [{ id: "maize" }] };
+  const { deps, savedSessions } = dependencies({
+    loadSession: async (id) => ({
+      id,
+      profile: completeProfile(),
+      lastResult: existingPlan,
+    }),
+    interpretConversationTurn: () => ({
+      kind: "clarify_value",
+      assistant: "What should your new total season budget be?",
+      pendingField: "budgetBdt",
+      patch: {},
+      changedFields: [],
+    }),
+    extractProfilePatch: async () => {
+      extractionCalls += 1;
+      return {};
+    },
+    getWeather: async () => {
+      weatherCalls += 1;
+      return {};
+    },
+  });
+
+  const result = await createPlanningWorkflow(deps)({
+    action: "chat",
+    sessionId: "session-revision-question",
+    message: "I want to change my budget.",
+  });
+
+  assert.equal(result.kind, "clarify_value");
+  assert.equal(result.pendingField, "budgetBdt");
+  assert.equal(result.readyToPlan, false);
+  assert.equal(result.planStale, false);
+  assert.equal(result.assistant, "What should your new total season budget be?");
+  assert.equal(weatherCalls, 0);
+  assert.equal(extractionCalls, 0);
+  assert.equal(savedSessions.length, 0);
+});
+
+test("chat turns persist a staged revision without replacing the existing plan", async () => {
+  let weatherCalls = 0;
+  const existingPlan = { crops: [{ id: "maize" }], explanation: "Previous plan" };
+  const { deps, savedSessions, savedMemories } = dependencies({
+    loadSession: async (id) => ({
+      id,
+      profile: completeProfile(),
+      lastResult: existingPlan,
+    }),
+    interpretConversationTurn: () => ({
+      kind: "revision_staged",
+      assistant: "Budget updated from BDT 90,000 to BDT 40,000.",
+      pendingField: "",
+      patch: { budgetBdt: 40000 },
+      changedFields: ["budgetBdt"],
+    }),
+    getWeather: async () => {
+      weatherCalls += 1;
+      return {};
+    },
+    memoryService: {
+      load: async () => ({
+        profile: completeProfile(),
+        lastResult: existingPlan,
+        preferences: { autoAdjustIrrigation: true },
+        conversationSummary: "Existing summary.",
+      }),
+      savePlan: async (memoryId, value) => {
+        savedMemories.push({ memoryId, value: structuredClone(value) });
+        return value;
+      },
+    },
+  });
+
+  const result = await createPlanningWorkflow(deps)({
+    action: "chat",
+    sessionId: "session-revision-value",
+    memoryId: "farm_0123456789abcdefghijklmn",
+    message: "BDT 40,000",
+    pendingField: "budgetBdt",
+  });
+
+  assert.equal(result.kind, "revision_staged");
+  assert.equal(result.profile.budgetBdt, 40000);
+  assert.equal(result.readyToPlan, true);
+  assert.equal(result.planStale, true);
+  assert.deepEqual(result.changedFields, ["budgetBdt"]);
+  assert.equal(weatherCalls, 0);
+  assert.equal(savedSessions.at(-1).profile.budgetBdt, 40000);
+  assert.deepEqual(savedSessions.at(-1).lastResult, existingPlan);
+  assert.equal(savedMemories[0].value.profile.budgetBdt, 40000);
+  assert.deepEqual(savedMemories[0].value.lastResult, existingPlan);
+  assert.match(savedMemories[0].value.conversationSummary, /budget/i);
+});
+
+test("explicit plan action uses the staged session profile", async () => {
+  let extractionCalls = 0;
+  let rankedBudget = null;
+  const { deps } = dependencies({
+    loadSession: async (id) => ({
+      id,
+      profile: { ...completeProfile(), budgetBdt: 40000 },
+      lastResult: { crops: [{ id: "maize" }] },
+    }),
+    extractProfilePatch: async () => {
+      extractionCalls += 1;
+      return {};
+    },
+    rankCrops: (profile) => {
+      rankedBudget = profile.budgetBdt;
+      return [{
+        id: "mustard",
+        name: "Mustard",
+        financials: { costBreakdownBdt: { fertilizer: 100, irrigation: 80 } },
+      }];
+    },
+  });
+
+  const result = await createPlanningWorkflow(deps)({
+    action: "plan",
+    sessionId: "session-revision-plan",
+    startDate: "2026-11-01",
+  });
+
+  assert.equal(extractionCalls, 0);
+  assert.equal(rankedBudget, 40000);
+  assert.equal(result.profile.budgetBdt, 40000);
+  assert.equal(result.crops[0].id, "mustard");
 });
 
 test("returns bounded phase timings for latency diagnosis without exposing secrets", async () => {

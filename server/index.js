@@ -6,6 +6,7 @@ import express from "express";
 import { assistantText } from "../shared/assistant.js";
 import { createNdjsonWriter } from "./activity.js";
 import { buildSeasonPlan, createTraceEntry, getMissingFields, rankCrops } from "./core.js";
+import { interpretConversationTurn } from "./conversation.js";
 import { databaseMode, deleteSession, initializeDatabase, loadSession, saveSession } from "./db.js";
 import { createMemoryService } from "./memory.js";
 import { explainRecommendation, extractProfilePatch, openAiMode } from "./openai.js";
@@ -53,6 +54,7 @@ function workflowFor(persistence) {
     loadSession,
     saveSession: (session) => persistence.saveMergedProfile(session),
     extractProfilePatch,
+    interpretConversationTurn,
     validateProfilePatch,
     getMissingFields,
     getWeather,
