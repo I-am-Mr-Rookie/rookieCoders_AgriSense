@@ -12,9 +12,10 @@ test("keeps certificate verification enabled by default", () => {
 
 test("allows an explicit target-only override for a self-signed database chain", () => {
   const config = createPoolConfig({
-    DATABASE_URL: "postgresql://example.invalid/db",
+    DATABASE_URL: "postgresql://example.invalid/db?sslmode=require",
     DATABASE_SSL_REJECT_UNAUTHORIZED: "false",
   });
 
+  assert.equal(config.connectionString, "postgresql://example.invalid/db");
   assert.deepEqual(config.ssl, { rejectUnauthorized: false });
 });
