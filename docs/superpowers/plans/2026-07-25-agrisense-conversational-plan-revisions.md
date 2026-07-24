@@ -222,33 +222,35 @@ git commit -m "fix: polish and pin the farmer transcript"
 - Modify: `server/workflow.js`
 - Create: `src/components/ConversationSidebar.jsx`
 - Create: `tests/memory-sessions.test.js`
+- Create: `server/memory-summary.js`
+- Create: `tests/memory-summary.test.js`
 - Modify: `src/App.jsx`
 - Modify: `src/styles.css`
 - Modify: `tests/ui-contract.test.js`
 
-- [ ] **Step 1: Write failing memory-session tests**
+- [x] **Step 1: Write failing memory-session tests**
 
-Prove that one recovery code can create two sessions, keep separate transcripts and plans, share one profile/preferences object, cap retained sessions/messages, and load legacy version-1 memory as an empty session list.
+Prove that one recovery code can create two sessions, keep separate transcripts and plans, share one profile/preferences object, cap retained sessions/messages, and load legacy version-1 memory as an empty session list. Prove that useful facts produce a bounded canonical memory summary while secrets, recovery codes, irrelevant chat, and raw traces are excluded.
 
-- [ ] **Step 2: Run focused tests and confirm RED**
+- [x] **Step 2: Run focused tests and confirm RED**
 
-Run: `node --test tests/memory-sessions.test.js tests/memory.test.js`
+Run: `node --test tests/memory-sessions.test.js tests/memory-summary.test.js tests/memory.test.js`
 
 Expected: the current memory service exposes only one top-level plan and summary.
 
-- [ ] **Step 3: Implement version-2 memory sessions**
+- [x] **Step 3: Implement version-2 memory sessions**
 
-Add `sessions` to normalized/public memory and serialized writes. Add atomic `createConversationSession` and `appendConversationTurn` operations. Update `savePlan` to attach the plan to `memorySessionId` while preserving every other session and preference.
+Add `sessions` to normalized/public memory and serialized writes. Add atomic `createConversationSession` and `appendConversationTurn` operations. Update `savePlan` to attach the plan to `memorySessionId` while preserving every other session and preference. Build and persist a compact allow-listed summary from the shared profile and explicit planning preferences.
 
-- [ ] **Step 4: Add session API and workflow integration**
+- [x] **Step 4: Add session API and workflow integration**
 
-Create one bounded session endpoint for new chats. Pass `memorySessionId` through chat and plan requests so transcripts and plans are persisted without exposing the recovery code to activity or model context.
+Create one bounded session endpoint for new chats. Pass `memorySessionId` through chat and plan requests so transcripts and plans are persisted without exposing the recovery code to activity or model context. Pass only the compact memory summary to recommendation generation and acknowledge relevant remembered context in the response.
 
-- [ ] **Step 5: Build the recent-chat workspace**
+- [x] **Step 5: Build the recent-chat workspace**
 
 Add an accessible recent-chat rail, New chat action, active session state, auto-generated titles, and session switching. New chats inherit shared memory but start with an empty transcript and plan.
 
-- [ ] **Step 6: Run focused and build gates**
+- [x] **Step 6: Run focused and build gates**
 
 Run: `node --test tests/memory-sessions.test.js tests/memory.test.js tests/workflow.test.js tests/ui-contract.test.js`
 
@@ -256,7 +258,7 @@ Run: `npm run build`
 
 Expected: all pass.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add server/memory.js server/index.js server/workflow.js src/components/ConversationSidebar.jsx src/App.jsx src/styles.css tests/memory-sessions.test.js tests/memory.test.js tests/workflow.test.js tests/ui-contract.test.js
@@ -268,7 +270,7 @@ git commit -m "feat: add recovery-linked conversation sessions"
 **Files:**
 - Modify: `docs/superpowers/agrisense-tier1-ui-defect-ledger.md`
 
-- [ ] **Step 1: Run all automated gates**
+- [x] **Step 1: Run all automated gates**
 
 Run: `npm run check`
 
@@ -276,7 +278,7 @@ Run: `npm audit --omit=dev`
 
 Expected: all tests pass, production build succeeds, and audit reports zero vulnerabilities.
 
-- [ ] **Step 2: Run the exact in-app browser acceptance flow**
+- [x] **Step 2: Run the exact in-app browser acceptance flow**
 
 Click and type:
 
@@ -293,11 +295,11 @@ Click and type:
 
 Also test light/dark modes, mobile width, keyboard focus, no horizontal overflow, and no console errors.
 
-- [ ] **Step 3: Update the defect ledger with exact evidence**
+- [x] **Step 3: Update the defect ledger with exact evidence**
 
 Record the pre-fix values, post-fix browser observations, test counts, timings, and remaining limitations.
 
-- [ ] **Step 4: Commit and push after verification**
+- [x] **Step 4: Commit and push after verification**
 
 ```powershell
 git add docs/superpowers/agrisense-tier1-ui-defect-ledger.md

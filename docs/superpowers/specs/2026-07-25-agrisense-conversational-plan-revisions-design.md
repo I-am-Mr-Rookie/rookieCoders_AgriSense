@@ -107,6 +107,7 @@ The transcript becomes the primary work surface:
 One recovery code owns:
 
 - one shared farm profile and farmer preferences;
+- one compact, token-efficient memory summary built only from allow-listed useful facts;
 - a bounded list of recent conversation sessions;
 - a separate transcript and latest generated plan for each session;
 - the most recently generated plan as the backward-compatible top-level plan.
@@ -125,6 +126,10 @@ Each session is:
 ```
 
 The list is capped at 20 sessions, each transcript at 80 sanitized text messages, and each message at 4,000 characters. New chats inherit the shared farm profile but do not copy another chat’s transcript or plan. Profile changes update the shared memory; generated plans remain attached to the chat that created them.
+
+PostgreSQL stores the structured profile, preferences, bounded session history, and compact summary in the existing JSONB-backed memory record. The compact summary is canonicalized to a short `key=value` form and may include only location, acreage, soil, water, budget, season, and explicit planning preferences. Recovery codes, credentials, raw tool traces, chain-of-thought, and unrelated conversation text are excluded.
+
+The agent receives the compact summary instead of concatenated chat history. When a remembered fact is relevant, the response acknowledges it in farmer language, for example: “I have your current season budget saved as BDT 90,000.” This provides continuity without paying the latency and context cost of replaying every session.
 
 The desktop workspace uses three deliberate columns: recent chats, active conversation, and compact farm context. On smaller screens the chat list becomes a horizontal recent-chat strip above the conversation. Empty chats show a centered conversational welcome instead of a large blank cavity.
 

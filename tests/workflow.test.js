@@ -83,6 +83,10 @@ function dependencies(overrides = {}) {
           savedMemories.push({ memoryId, value: structuredClone(value) });
           return value;
         },
+        appendConversationTurn: async (memoryId, value) => {
+          savedMemories.push({ memoryId, conversation: structuredClone(value) });
+          return value;
+        },
       },
       now: () => new Date("2026-07-24T19:00:00.000Z"),
       ...overrides,
@@ -164,7 +168,7 @@ test("chat turns ask for a missing revision value without starting planning", as
     }),
     interpretConversationTurn: () => ({
       kind: "clarify_value",
-      assistant: "What should your new total season budget be?",
+      assistant: "I have your current total season budget saved as BDT 90,000. What should the new budget be?",
       pendingField: "budgetBdt",
       patch: {},
       changedFields: [],
@@ -189,7 +193,7 @@ test("chat turns ask for a missing revision value without starting planning", as
   assert.equal(result.pendingField, "budgetBdt");
   assert.equal(result.readyToPlan, false);
   assert.equal(result.planStale, false);
-  assert.equal(result.assistant, "What should your new total season budget be?");
+  assert.equal(result.assistant, "I have your current total season budget saved as BDT 90,000. What should the new budget be?");
   assert.equal(weatherCalls, 0);
   assert.equal(extractionCalls, 0);
   assert.equal(savedSessions.length, 0);
@@ -283,6 +287,90 @@ test("explicit plan action uses the staged session profile", async () => {
   assert.equal(rankedBudget, 40000);
   assert.equal(result.profile.budgetBdt, 40000);
   assert.equal(result.crops[0].id, "mustard");
+});
+
+test("connected chat turns append only the visible farmer and assistant messages", async () => {
+  const appended = [];
+  const { deps } = dependencies({
+    loadSession: async (id) => ({
+      id,
+      profile: completeProfile(),
+      lastResult: { crops: [{ id: "maize" }] },
+    }),
+    interpretConversationTurn: () => ({
+      kind: "clarify_value",
+      assistant: "I have your current total season budget saved as BDT 90,000. What should the new budget be?",
+      pendingField: "budgetBdt",
+      patch: {},
+      changedFields: [],
+    }),
+    memoryService: {
+      load: async () => ({
+        profile: completeProfile(),
+        lastResult: null,
+        sessions: [{ id: "chat-budget", lastResult: { crops: [{ id: "maize" }] } }],
+        preferences: {},
+        conversationSummary: "",
+      }),
+      appendConversationTurn: async (memoryId, value) => {
+        appended.push({ memoryId, value: structuredClone(value) });
+      },
+    },
+  });
+
+  await createPlanningWorkflow(deps)({
+    action: "chat",
+    sessionId: "chat-budget",
+    memoryId: "farm_0123456789abcdefghijklmn",
+    memorySessionId: "chat-budget",
+    message: "I want to change my budget.",
+  });
+
+  assert.deepEqual(appended[0].value, {
+    sessionId: "chat-budget",
+    messages: [
+      { role: "farmer", text: "I want to change my budget." },
+      { role: "agent", text: "I have your current total season budget saved as BDT 90,000. What should the new budget be?" },
+    ],
+    conversationSummary: "Location=Gazipur | Area=1ac | Soil=loam | Water=irrigated | Budget=BDT90000 | Season=Rabi",
+  });
+  assert.equal(JSON.stringify(appended).includes("farm_0123456789abcdefghijklmn"), true);
+});
+
+test("explicit planning attaches the result to the active memory session", async () => {
+  const savedPlans = [];
+  const appended = [];
+  const { deps } = dependencies({
+    loadSession: async (id) => ({
+      id,
+      profile: { ...completeProfile(), budgetBdt: 40000 },
+      lastResult: null,
+    }),
+    memoryService: {
+      load: async () => ({
+        profile: { ...completeProfile(), budgetBdt: 40000 },
+        lastResult: null,
+        sessions: [{ id: "chat-budget", lastResult: null }],
+        preferences: {},
+        conversationSummary: "",
+      }),
+      savePlan: async (_memoryId, value) => savedPlans.push(structuredClone(value)),
+      appendConversationTurn: async (_memoryId, value) => appended.push(structuredClone(value)),
+    },
+  });
+
+  await createPlanningWorkflow(deps)({
+    action: "plan",
+    sessionId: "chat-budget",
+    memoryId: "farm_0123456789abcdefghijklmn",
+    memorySessionId: "chat-budget",
+  });
+
+  assert.equal(savedPlans[0].memorySessionId, "chat-budget");
+  assert.equal(savedPlans[0].lastResult.crops[0].id, "maize");
+  assert.deepEqual(appended[0].messages, [
+    { role: "agent", text: "**Maize** is the grounded recommendation." },
+  ]);
 });
 
 test("returns bounded phase timings for latency diagnosis without exposing secrets", async () => {

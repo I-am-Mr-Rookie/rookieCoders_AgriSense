@@ -71,6 +71,16 @@ test("no-key explanation uses the deterministic grounded builder", async () => {
   assert.ok(result.text.split("\n").length >= 7);
 });
 
+test("explanation acknowledges compact remembered context without replaying chat history", async () => {
+  const result = await explainRecommendation({
+    ...context,
+    memorySummary: "Location=Gazipur | Area=2.5ac | Budget=BDT50000 | Preferences=low risk",
+  }, null);
+
+  assert.match(result.text, /Remembered context/);
+  assert.match(result.text, /Preferences=low risk/);
+});
+
 test("tool-loop failure returns a sanitized deterministic recovery", async () => {
   const leakedSecret = "sk-super-secret-do-not-leak";
   const fakeClient = {

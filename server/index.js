@@ -121,6 +121,18 @@ app.post("/api/memory/preferences", async (req, res) => {
   }
 });
 
+app.post("/api/memory/sessions", async (req, res) => {
+  try {
+    const memory = await memoryService.createConversationSession(
+      req.body.memoryId,
+      req.body.session,
+    );
+    return res.status(201).json({ memory, database: databaseMode() });
+  } catch (error) {
+    return res.status(400).json({ error: error.message, recoverable: true });
+  }
+});
+
 app.post("/api/session/message", async (req, res) => {
   const persistence = createPersistenceGuard(saveSession);
   try {

@@ -61,13 +61,13 @@ test("demo mode reveals events serially with the configured pacing delay", async
   await presenter.drain();
 });
 
-test("demo mode defaults to roughly 250 to 300 milliseconds per step", () => {
-  assert.ok(DEFAULT_DEMO_STEP_DELAY_MS >= 250);
-  assert.ok(DEFAULT_DEMO_STEP_DELAY_MS <= 300);
+test("demo mode defaults to a fast but readable 150 to 190 milliseconds per step", () => {
+  assert.ok(DEFAULT_DEMO_STEP_DELAY_MS >= 150);
+  assert.ok(DEFAULT_DEMO_STEP_DELAY_MS <= 190);
   const elevenEventDemoWithCompletionPause =
-    (11 * DEFAULT_DEMO_STEP_DELAY_MS) + 600;
-  assert.ok(elevenEventDemoWithCompletionPause >= 3_000);
-  assert.ok(elevenEventDemoWithCompletionPause <= 4_000);
+    (11 * DEFAULT_DEMO_STEP_DELAY_MS) + 350;
+  assert.ok(elevenEventDemoWithCompletionPause >= 2_000);
+  assert.ok(elevenEventDemoWithCompletionPause <= 3_000);
 });
 
 test("presentation never changes recorded event durations", async () => {

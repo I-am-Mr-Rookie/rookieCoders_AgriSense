@@ -15,3 +15,10 @@ test("health response exposes the release revision", () => {
 
   assert.match(source, /releaseRevision:\s*getReleaseRevision\(\)/);
 });
+
+test("server exposes a bounded conversation-session creation endpoint", () => {
+  const source = readFileSync(new URL("../server/index.js", import.meta.url), "utf8");
+
+  assert.match(source, /app\.post\("\/api\/memory\/sessions"/);
+  assert.match(source, /memoryService\.createConversationSession/);
+});

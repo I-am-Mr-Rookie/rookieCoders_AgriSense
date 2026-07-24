@@ -1,4 +1,5 @@
 import { createActivityEmitter } from "./activity.js";
+import { buildCompactMemorySummary } from "./memory-summary.js";
 import { redactRecoveryIds } from "../shared/redaction.js";
 
 const FIELD_LABELS = {
@@ -43,6 +44,10 @@ export function createPlanningWorkflow(deps) {
       memory = await deps.memoryService.load(body.memoryId);
       if (!memory) throw new Error("Farmer memory was not found.");
       session.profile = { ...session.profile, ...memory.profile };
+      const memorySession = memory.sessions?.find((item) => item.id === body.memorySessionId);
+      if (!session.lastResult && memorySession?.lastResult) {
+        session.lastResult = memorySession.lastResult;
+      }
       if (!isChatTurn) {
         await emit("memory.loaded", "Saved farm memory loaded", "completed", {
           profileFields: Object.keys(memory.profile || {}),
@@ -82,13 +87,19 @@ export function createPlanningWorkflow(deps) {
       const changedFields = Object.keys(patch);
       const readyToPlan = changedFields.length > 0 && missingFields.length === 0;
       const planStale = readyToPlan && Boolean(currentPlan);
-      const summary = revisionSummary(memory?.conversationSummary, changedFields);
+      const summary = buildCompactMemorySummary({
+        profile: session.profile,
+        previousSummary: memory?.conversationSummary,
+        message,
+      }) || revisionSummary(memory?.conversationSummary, changedFields);
 
+      let savedMemory = memory;
       if (body.memoryId && changedFields.length) {
-        await deps.memoryService.savePlan(body.memoryId, {
+        savedMemory = await deps.memoryService.savePlan(body.memoryId, {
           profile: session.profile,
           lastResult: currentPlan,
           conversationSummary: summary,
+          memorySessionId: body.memorySessionId,
         }, { signal });
       }
 
@@ -102,6 +113,16 @@ export function createPlanningWorkflow(deps) {
             ? "Your farm details are ready. Review them, then create the plan."
             : "I can help revise your budget, farm size, soil, water availability, location, or season."
       );
+      if (body.memoryId && body.memorySessionId) {
+        savedMemory = await deps.memoryService.appendConversationTurn(body.memoryId, {
+          sessionId: body.memorySessionId,
+          messages: [
+            { role: "farmer", text: message },
+            { role: "agent", text: assistant },
+          ],
+          conversationSummary: summary,
+        });
+      }
 
       return {
         sessionId,
@@ -114,6 +135,7 @@ export function createPlanningWorkflow(deps) {
         missingFields,
         readyToPlan,
         planStale,
+        memory: savedMemory,
       };
     }
 
@@ -273,6 +295,11 @@ export function createPlanningWorkflow(deps) {
     await emit("agent.response.started", "AgriSense is checking tools and explaining the plan", "running", {
       model: deps.openAiMode(),
     });
+    const compactSummary = buildCompactMemorySummary({
+      profile: session.profile,
+      previousSummary: memory?.conversationSummary,
+      message,
+    });
     const explanation = await deps.explainRecommendation({
       profile: session.profile,
       weather,
@@ -281,6 +308,7 @@ export function createPlanningWorkflow(deps) {
       seasonPlan,
       inputSchedule,
       rag,
+      memorySummary: compactSummary,
       userMessage: message,
       signal,
     });
@@ -325,13 +353,22 @@ export function createPlanningWorkflow(deps) {
       throwIfAborted();
     }
 
+    let savedMemory = memory;
     if (body.memoryId) {
       throwIfAborted();
-      await deps.memoryService.savePlan(body.memoryId, {
+      savedMemory = await deps.memoryService.savePlan(body.memoryId, {
         profile: session.profile,
         lastResult: session.lastResult,
-        conversationSummary: memory?.conversationSummary ?? "",
+        conversationSummary: compactSummary,
+        memorySessionId: body.memorySessionId,
       }, { signal });
+      if (body.memorySessionId) {
+        savedMemory = await deps.memoryService.appendConversationTurn(body.memoryId, {
+          sessionId: body.memorySessionId,
+          messages: [{ role: "agent", text: explanation.text }],
+          conversationSummary: compactSummary,
+        });
+      }
       await emit("memory.saved", "Farm memory updated", "completed", {
         profileFields: Object.keys(session.profile),
         hasPlan: true,
@@ -344,6 +381,7 @@ export function createPlanningWorkflow(deps) {
       memoryConnected: Boolean(body.memoryId),
       assistant: explanation.text,
       reasoningSummaries: explanation.reasoningSummaries ?? [],
+      memory: savedMemory,
       ...session.lastResult,
     };
     await emit("request.completed", "Plan ready", "completed", {

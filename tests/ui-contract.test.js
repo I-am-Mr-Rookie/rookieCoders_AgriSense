@@ -7,10 +7,12 @@ const markdownUrl = new URL("../src/components/Markdown.jsx", import.meta.url);
 const runMessageUrl = new URL("../src/components/AgentRunMessage.jsx", import.meta.url);
 const evidenceListUrl = new URL("../src/components/EvidenceGroupList.jsx", import.meta.url);
 const revisionCardUrl = new URL("../src/components/PlanRevisionCard.jsx", import.meta.url);
+const conversationSidebarUrl = new URL("../src/components/ConversationSidebar.jsx", import.meta.url);
 const markdownSource = existsSync(markdownUrl) ? readFileSync(markdownUrl, "utf8") : "";
 const runMessageSource = existsSync(runMessageUrl) ? readFileSync(runMessageUrl, "utf8") : "";
 const evidenceListSource = existsSync(evidenceListUrl) ? readFileSync(evidenceListUrl, "utf8") : "";
 const revisionCardSource = existsSync(revisionCardUrl) ? readFileSync(revisionCardUrl, "utf8") : "";
+const conversationSidebarSource = existsSync(conversationSidebarUrl) ? readFileSync(conversationSidebarUrl, "utf8") : "";
 const cssSource = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 const mainSource = readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
 const packageSource = readFileSync(new URL("../package.json", import.meta.url), "utf8");
@@ -52,7 +54,8 @@ test("fresh demo state is sent with its new explicit session ID", () => {
     "setConversation(fresh.conversation);",
     "setResult(fresh.result);",
     "setError(fresh.error);",
-    'send({ action: "plan", profilePatch: DEMO_PROFILE, startDate: planStartDate }, fresh.sessionId, { memoryId: "", mode: "demo" })',
+    "const privateMemory = await ensurePrivateMemory(fresh.sessionId, fresh.conversation);",
+    "{ memoryId: privateMemory.memoryId, mode: \"demo\" }",
   ]);
 });
 
@@ -111,7 +114,7 @@ test("visual system includes high-contrast tokens, keyboard focus, and reduced m
 test("narrow layouts contain flex, grid, and long-content overflow", () => {
   assertIncludesAll(compactCss, [
     "body{margin:0;max-width:100%;overflow-x:hidden;",
-    "main,.layout,.panel,.hero,.status,form,input,textarea,pre{min-width:0}",
+    "main,.layout,.conversation-workspace,.panel,.hero,.status,form,input,textarea,pre{min-width:0}",
     "input{width:100%;max-width:100%",
     "a,p,small,dd{overflow-wrap:anywhere}",
     "@media(max-width:480px)",
@@ -170,7 +173,7 @@ test("agent run stays inside one assistant message with accessible terminal cont
     "run:",
     "updateConversationRun",
     "presenter.drain()",
-    "await wait(600)",
+    "await wait(350)",
     "setResult(data)",
   ]);
   assertIncludesAll(runMessageSource, [
@@ -356,5 +359,35 @@ test("composer and recommendation support polished multiline reading", () => {
     "field-sizing:content",
     "max-height:132px",
     "scroll-padding-block:",
+  ]);
+});
+
+test("one private recovery code exposes separate switchable chat sessions", () => {
+  assertIncludesAll(appSource, [
+    'import ConversationSidebar from "./components/ConversationSidebar.jsx"',
+    "savedMemory?.sessions",
+    "memorySessionId: requestSessionId",
+    "async function newConversation()",
+    "function switchConversation(session)",
+    'fetch("/api/memory/sessions"',
+    "<ConversationSidebar",
+  ]);
+  assertIncludesAll(conversationSidebarSource, [
+    "Recent chats",
+    "New chat",
+    "recent.map",
+    "aria-current",
+  ]);
+});
+
+test("short conversations use a centered welcome state without truncating the transcript", () => {
+  assertIncludesAll(appSource, [
+    'data-short={conversation.length <= 1}',
+    "conversation-workspace",
+  ]);
+  assertIncludesAll(compactCss, [
+    ".conversation-workspace{",
+    '.messages[data-short="true"]',
+    "grid-template-columns:220pxminmax(0,1fr)300px",
   ]);
 });

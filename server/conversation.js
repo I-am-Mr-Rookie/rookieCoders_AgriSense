@@ -108,6 +108,16 @@ function fieldLabel(field) {
   }[field];
 }
 
+function clarificationQuestion(field, currentProfile) {
+  if (field === "budgetBdt" && currentProfile[field]) {
+    return `I have your current total season budget saved as ${formatValue(field, currentProfile[field])}. What should the new budget be?`;
+  }
+  if (field === "farmSizeAcres" && currentProfile[field]) {
+    return `I remember this farm as ${formatValue(field, currentProfile[field])}. What farm size should I use now?`;
+  }
+  return FIELD_CONFIG[field].question;
+}
+
 export function interpretConversationTurn(message, currentProfile = {}, context = {}) {
   const text = String(message || "").trim();
   const detectedField = detectField(text);
@@ -132,7 +142,11 @@ export function interpretConversationTurn(message, currentProfile = {}, context 
   const parsed = parseFieldValue(selectedField, text);
   if (parsed.invalid) return emptyResult("invalid_value", parsed.invalid, selectedField);
   if (parsed.missing) {
-    return emptyResult("clarify_value", FIELD_CONFIG[selectedField].question, selectedField);
+    return emptyResult(
+      "clarify_value",
+      clarificationQuestion(selectedField, currentProfile),
+      selectedField,
+    );
   }
 
   const previous = currentProfile[selectedField];

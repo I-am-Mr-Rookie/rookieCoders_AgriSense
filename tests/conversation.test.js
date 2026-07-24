@@ -17,7 +17,7 @@ test("asks only for the new value when the farmer names budget", () => {
     interpretConversationTurn("I want to change my budget.", profile),
     {
       kind: "clarify_value",
-      assistant: "What should your new total season budget be?",
+      assistant: "I have your current total season budget saved as BDT 90,000. What should the new budget be?",
       pendingField: "budgetBdt",
       patch: {},
       changedFields: [],
@@ -56,7 +56,7 @@ test("continues a generic edit by asking for the selected field value", () => {
   const result = interpretConversationTurn("Budget", profile, { awaitingField: true });
   assert.equal(result.kind, "clarify_value");
   assert.equal(result.pendingField, "budgetBdt");
-  assert.match(result.assistant, /new total season budget/i);
+  assert.match(result.assistant, /current total season budget saved as BDT 90,000/i);
 });
 
 test("reports invalid budget values without discarding the pending field", () => {
@@ -109,4 +109,3 @@ test("leaves unrelated questions for the general chat path", () => {
     },
   );
 });
-

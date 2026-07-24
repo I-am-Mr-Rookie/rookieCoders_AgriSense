@@ -8,8 +8,13 @@ import {
   failAgentRun,
   toggleRunCollapsed,
 } from "./agent-run.js";
-import { isNearTranscriptBottom, pinTranscript } from "./chat-scroll.js";
+import {
+  focusTranscriptItem,
+  isNearTranscriptBottom,
+  pinTranscript,
+} from "./chat-scroll.js";
 import AgentRunMessage from "./components/AgentRunMessage.jsx";
+import ConversationSidebar from "./components/ConversationSidebar.jsx";
 import EvidenceGroupList from "./components/EvidenceGroupList.jsx";
 import Markdown from "./components/Markdown.jsx";
 import { PlanRevisionCard } from "./components/PlanRevisionCard.jsx";
@@ -22,6 +27,7 @@ import {
 import {
   createFreshDemoState,
   createInitialConversation,
+  createSessionId,
   loadOrCreateSessionId,
   persistSessionId,
 } from "./session.js";
@@ -57,6 +63,17 @@ function updateConversationRun(items, runId, update) {
   ));
 }
 
+function storedConversation(items = []) {
+  return items.flatMap((item) => {
+    if (item.role === "farmer" && item.text) return [{ role: "farmer", text: item.text }];
+    if (item.role === "agent" && item.text) return [{ role: "agent", text: item.text }];
+    if (item.role === "agent" && item.run?.status === "complete" && item.run.answer) {
+      return [{ role: "agent", text: item.run.answer }];
+    }
+    return [];
+  });
+}
+
 function MemoryPanel({
   connected,
   persistence,
@@ -75,7 +92,7 @@ function MemoryPanel({
   return (
     <section className="panel memory-panel">
       <div className="section-heading">
-        <div><span className="eyebrow">Private and optional</span><h3>Saved farm memory</h3></div>
+        <div><span className="eyebrow">Private and optional</span><h2>Saved farm memory</h2></div>
         <span className={`memory-state ${connected ? "connected" : ""}`}>{connected ? "Connected" : "Not connected"}</span>
       </div>
       <p>Carry farm size, budget, preferences, and the last plan into a later visit with one recovery code.</p>
@@ -96,11 +113,13 @@ function MemoryPanel({
           <div>
             <input
               id="memory-id"
+              name="memoryRecoveryCode"
               type="password"
               value={memoryInput}
               onChange={(event) => onInput(event.target.value)}
-              placeholder="Paste farm_ recovery code"
+              placeholder="Paste farm_ recovery code…"
               autoComplete="off"
+              spellCheck={false}
             />
             <button type="button" disabled={busy || !memoryInput.trim()} onClick={onResume}>Resume</button>
           </div>
@@ -110,6 +129,7 @@ function MemoryPanel({
           <label>
             <input
               type="checkbox"
+              name="autoAdjustIrrigation"
               checked={autoAdjustIrrigation}
               disabled={busy}
               onChange={(event) => onAutoAdjust(event.target.checked)}
@@ -122,6 +142,10 @@ function MemoryPanel({
               {Object.entries(savedMemory?.profile || {}).map(([name, value]) => (
                 <div key={name}><dt>{name}</dt><dd>{String(value)}</dd></div>
               ))}
+              <div><dt>Chat sessions</dt><dd>{savedMemory?.sessions?.length ?? 0}</dd></div>
+              {savedMemory?.conversationSummary && (
+                <div><dt>Compact agent context</dt><dd>{savedMemory.conversationSummary}</dd></div>
+              )}
               <div><dt>Previous plan</dt><dd>{savedMemory?.lastResult ? "Available" : "Not saved yet"}</dd></div>
             </dl>
           </details>
@@ -200,6 +224,7 @@ export default function App() {
   const keepMessagesPinnedRef = useRef(true);
   const transcriptInteractionRef = useRef(false);
   const best = useMemo(() => result?.crops?.[0], [result]);
+  const conversationSessions = savedMemory?.sessions ?? [];
   const latestRun = useMemo(() => {
     for (let index = conversation.length - 1; index >= 0; index -= 1) {
       if (conversation[index].run) return conversation[index].run;
@@ -271,6 +296,23 @@ export default function App() {
     setTheme(persistThemePreference(nextTheme));
   }
 
+  function focusCompletedRun(runId) {
+    keepMessagesPinnedRef.current = false;
+    globalThis.requestAnimationFrame?.(() => {
+      const messages = messagesRef.current;
+      const runElement = globalThis.document?.getElementById(`agent-run-${runId}`);
+      focusTranscriptItem(messages, runElement?.closest(".message-row"));
+    });
+  }
+
+  function focusLatestMessage() {
+    keepMessagesPinnedRef.current = false;
+    globalThis.requestAnimationFrame?.(() => {
+      const messages = messagesRef.current;
+      focusTranscriptItem(messages, messages?.querySelector?.(".message-row:last-child"));
+    });
+  }
+
   async function send(payload, requestSessionId = sessionId, options = {}) {
     const requestMemoryId = Object.hasOwn(options, "memoryId") ? options.memoryId : memoryId;
     const mode = options.mode === "demo" ? "demo" : "live";
@@ -307,7 +349,9 @@ export default function App() {
       payload = {
         ...payload,
         preferences: { autoAdjustIrrigation },
-        ...(requestMemoryId ? { memoryId: requestMemoryId } : {}),
+        ...(requestMemoryId
+          ? { memoryId: requestMemoryId, memorySessionId: requestSessionId }
+          : {}),
       };
       const response = await fetch("/api/session/message/stream", {
         method: "POST",
@@ -319,7 +363,7 @@ export default function App() {
         presenter.present(event);
       });
       await presenter.drain();
-      await wait(600);
+      await wait(350);
       if (controller.signal.aborted) {
         const abortError = new Error("Request cancelled.");
         abortError.name = "AbortError";
@@ -343,15 +387,9 @@ export default function App() {
         setConversation((items) => completePlanRevision(items).items);
         setRevision(createRevisionState());
       }
-      if (requestMemoryId) {
-        setSavedMemory((current) => ({
-          ...(current || {}),
-          profile: data.profile,
-          lastResult: data.crops ? data : current?.lastResult,
-          preferences: { autoAdjustIrrigation },
-        }));
-      }
+      if (requestMemoryId && data.memory) setSavedMemory(data.memory);
       setMessage("");
+      focusCompletedRun(runId);
     } catch (err) {
       presenter.cancel();
       const cancelled = err.name === "AbortError" || controller.signal.aborted;
@@ -376,6 +414,7 @@ export default function App() {
     setBusy(true);
     setError("");
     try {
+      const privateMemory = await ensurePrivateMemory(sessionId, conversation);
       const response = await fetch("/api/session/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -385,7 +424,8 @@ export default function App() {
           pendingField: revision.pendingField,
           awaitingField: revision.awaitingField,
           sessionId,
-          ...(memoryId ? { memoryId } : {}),
+          memoryId: privateMemory.memoryId,
+          memorySessionId: sessionId,
         }),
       });
       const data = await response.json();
@@ -393,14 +433,7 @@ export default function App() {
       const next = appendChatTurn(conversation, farmerMessage, data, revision);
       setConversation(next.items);
       setRevision(next.revision);
-      if (memoryId) {
-        setSavedMemory((current) => ({
-          ...(current || {}),
-          profile: data.profile,
-          lastResult: current?.lastResult,
-          preferences: { autoAdjustIrrigation },
-        }));
-      }
+      if (data.memory) setSavedMemory(data.memory);
       setMessage("");
     } catch (err) {
       setError(err.message);
@@ -421,7 +454,7 @@ export default function App() {
     if (message.trim()) void sendChat(message.trim());
   }
 
-  function runDemo() {
+  async function runDemo() {
     const fresh = createFreshDemoState();
     persistSessionId(fresh.sessionId);
     setSessionId(fresh.sessionId);
@@ -430,27 +463,64 @@ export default function App() {
     setResult(fresh.result);
     setRevision(createRevisionState());
     setError(fresh.error);
-    void send({ action: "plan", profilePatch: DEMO_PROFILE, startDate: planStartDate }, fresh.sessionId, { memoryId: "", mode: "demo" });
+    try {
+      const privateMemory = await ensurePrivateMemory(fresh.sessionId, fresh.conversation);
+      await send(
+        { action: "plan", profilePatch: DEMO_PROFILE, startDate: planStartDate },
+        fresh.sessionId,
+        { memoryId: privateMemory.memoryId, mode: "demo" },
+      );
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
-  async function ensurePrivateMemory() {
-    if (memoryId) return memoryId;
-    const response = await fetch("/api/memory/create", {
+  async function registerConversation(privateMemoryId, requestSessionId, items) {
+    const response = await fetch("/api/memory/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        sessionId,
-        preferences: { autoAdjustIrrigation },
+        memoryId: privateMemoryId,
+        session: {
+          id: requestSessionId,
+          title: "New conversation",
+          messages: storedConversation(items),
+        },
       }),
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Could not create farm memory.");
-    setMemoryId(data.memoryId);
-    setNewMemoryId(data.memoryId);
-    setMemoryInput("");
-    setMemoryPersistence(data.database);
+    if (!response.ok) throw new Error(data.error || "Could not save the conversation.");
     setSavedMemory(data.memory);
-    return data.memoryId;
+    setMemoryPersistence(data.database);
+    return data.memory;
+  }
+
+  async function ensurePrivateMemory(requestSessionId = sessionId, items = conversation) {
+    let privateMemoryId = memoryId;
+    let privateMemory = savedMemory;
+    if (!privateMemoryId) {
+      const response = await fetch("/api/memory/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: requestSessionId,
+          preferences: { autoAdjustIrrigation },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not create farm memory.");
+      privateMemoryId = data.memoryId;
+      privateMemory = data.memory;
+      setMemoryId(data.memoryId);
+      setNewMemoryId(data.memoryId);
+      setMemoryInput("");
+      setMemoryPersistence(data.database);
+      setSavedMemory(data.memory);
+    }
+    if (!privateMemory?.sessions?.some((item) => item.id === requestSessionId)) {
+      privateMemory = await registerConversation(privateMemoryId, requestSessionId, items);
+    }
+    return { memoryId: privateMemoryId, memory: privateMemory };
   }
 
   async function createMemory() {
@@ -465,16 +535,56 @@ export default function App() {
     }
   }
 
+  async function newConversation() {
+    setBusy(true);
+    setError("");
+    try {
+      const privateMemory = await ensurePrivateMemory(sessionId, conversation);
+      const nextSessionId = createSessionId();
+      const nextConversation = createInitialConversation();
+      await registerConversation(
+        privateMemory.memoryId,
+        nextSessionId,
+        nextConversation,
+      );
+      persistSessionId(nextSessionId);
+      setSessionId(nextSessionId);
+      setConversation(nextConversation);
+      setResult(null);
+      setRevision(createRevisionState());
+      setMessage("");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function switchConversation(session) {
+    if (busy || !session?.id) return;
+    const restoredConversation = session.messages?.length
+      ? session.messages
+      : createInitialConversation();
+    persistSessionId(session.id);
+    setSessionId(session.id);
+    setConversation(restoredConversation);
+    setResult(session.lastResult ?? null);
+    setRevision(createRevisionState());
+    setMessage("");
+    setError("");
+    focusLatestMessage();
+  }
+
   async function createUpdatedPlan() {
     setBusy(true);
     setError("");
     try {
-      const ensuredMemoryId = await ensurePrivateMemory();
+      const privateMemory = await ensurePrivateMemory();
       setBusy(false);
       await send(
         { action: "plan", startDate: planStartDate },
         sessionId,
-        { memoryId: ensuredMemoryId },
+        { memoryId: privateMemory.memoryId },
       );
     } catch (err) {
       setError(err.message);
@@ -499,19 +609,29 @@ export default function App() {
       setMemoryId(memoryInput.trim());
       setMemoryInput("");
       setMemoryPersistence(data.database);
-      setSavedMemory(data.memory);
+      let resumedMemory = data.memory;
       setAutoAdjustIrrigation(data.memory.preferences?.autoAdjustIrrigation !== false);
-      setConversation(fresh.conversation);
-      setRevision(createRevisionState());
-      if (data.memory.lastResult) {
-        const restored = data.memory.lastResult;
-        setResult(restored);
-        if (restored.explanation) {
-          setConversation([...fresh.conversation, { role: "agent", text: restored.explanation }]);
-        }
-      } else {
-        setResult(null);
+      let activeSession = [...(resumedMemory.sessions || [])].sort((left, right) =>
+        String(right.updatedAt || "").localeCompare(String(left.updatedAt || ""))
+      )[0];
+      if (!activeSession) {
+        resumedMemory = await registerConversation(
+          memoryInput.trim(),
+          fresh.sessionId,
+          fresh.conversation,
+        );
+        activeSession = resumedMemory.sessions.find((item) => item.id === fresh.sessionId);
       }
+      setSavedMemory(resumedMemory);
+      const restoredSessionId = activeSession?.id || fresh.sessionId;
+      persistSessionId(restoredSessionId);
+      setSessionId(restoredSessionId);
+      setConversation(activeSession?.messages?.length
+        ? activeSession.messages
+        : fresh.conversation);
+      setRevision(createRevisionState());
+      setResult(activeSession?.lastResult ?? null);
+      focusLatestMessage();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -520,6 +640,9 @@ export default function App() {
   }
 
   async function forgetMemory() {
+    if (!globalThis.confirm?.("Forget this saved farm memory and every linked chat? This cannot be undone.")) {
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -576,6 +699,7 @@ export default function App() {
 
   return (
     <main aria-busy={busy}>
+      <a className="skip-link" href="#advisor">Skip to conversation</a>
       <header>
         <div className="brand">
           <span className="brand-icon" aria-hidden="true">🌱</span>
@@ -598,7 +722,7 @@ export default function App() {
               </button>
             ))}
           </div>
-          <button type="button" className="demo" disabled={busy} onClick={runDemo}>Start fresh Gazipur demo</button>
+          <button type="button" className="demo" disabled={busy} onClick={() => void runDemo()}>Demo Gazipur</button>
         </div>
       </header>
 
@@ -617,19 +741,22 @@ export default function App() {
         <a href={result ? "#evidence" : undefined} aria-disabled={!result} tabIndex={result ? undefined : -1}><span>6</span>Evidence & trace</a>
       </nav>
 
-      <section className="hero">
-        <div>
-          <h2>A grounded season plan that shows its work.</h2>
-          <p>Live Bangladesh weather, cited knowledge, deterministic economics, persistent farm context, and an inspectable tool trace.</p>
-        </div>
-        <div className="status" role="status" aria-live="polite" aria-atomic="true"><b>{status.title}</b><span>{status.detail}</span></div>
-      </section>
-
-      <div className="layout" id="advisor">
+      <div className="conversation-workspace" id="advisor">
+        <ConversationSidebar
+          sessions={conversationSessions}
+          activeSessionId={sessionId}
+          connected={Boolean(memoryId)}
+          busy={busy}
+          onNew={() => void newConversation()}
+          onSelect={switchConversation}
+        />
         <section className="panel chat">
           <div className="chat-heading">
-            <div><span className="eyebrow">Farm advisor</span><h3>Farmer conversation</h3></div>
-            <span className="conversation-state">{busy ? "AgriSense is working" : "Ready"}</span>
+            <div><span className="eyebrow">Farm advisor</span><h2>Farmer conversation</h2></div>
+            <div className="conversation-state status" role="status" aria-live="polite" aria-atomic="true">
+              <b>{busy ? "AgriSense is working" : status.title}</b>
+              <span>{status.detail}</span>
+            </div>
           </div>
           {revision.planStale && (
             <p className="stale-plan-notice" role="status">
@@ -638,6 +765,7 @@ export default function App() {
           )}
           <div
             className="messages"
+            data-short={conversation.length <= 1}
             ref={messagesRef}
             role="log"
             aria-live="polite"
@@ -694,19 +822,21 @@ export default function App() {
               name="farmMessage"
               rows={1}
               value={message}
+              autoComplete="off"
               onChange={(event) => setMessage(event.target.value)}
               onKeyDown={handleComposerKeyDown}
-              placeholder="Example: I have 1 acre in Gazipur..."
+              placeholder="Example: I have 1 acre in Gazipur…"
               disabled={busy}
               aria-invalid={Boolean(error)}
               aria-describedby={error ? "request-error" : undefined}
             />
-            <button type="submit" disabled={busy || !message.trim()}>{busy ? "Working..." : "Send"}</button>
+            <button type="submit" disabled={busy || !message.trim()}>{busy ? "Working…" : "Send"}</button>
           </form>
           <label className="date-control" htmlFor="plan-start-date">
             Season plan start date
             <input
               id="plan-start-date"
+              name="planStartDate"
               type="date"
               value={planStartDate}
               onChange={(event) => setPlanStartDate(event.target.value)}
@@ -738,7 +868,7 @@ export default function App() {
             onAutoAdjust={(value) => void updateAutoAdjust(value)}
           />
           <section className="panel summary">
-            <h3>Recommendation</h3>
+            <h2>Recommendation</h2>
             {!best ? <p className="muted">Complete the intake or run the demo.</p> : (
               <>
                 <div className="best"><span>Best fit</span><strong>{best.name}</strong><em>{best.suitability}% suitability · {best.riskLevel} risk</em></div>

@@ -1,4 +1,4 @@
-export const DEFAULT_DEMO_STEP_DELAY_MS = 275;
+export const DEFAULT_DEMO_STEP_DELAY_MS = 170;
 
 function defaultWait(delayMs) {
   return new Promise((resolve) => globalThis.setTimeout(resolve, delayMs));

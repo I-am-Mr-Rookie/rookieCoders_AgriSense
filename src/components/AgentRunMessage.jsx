@@ -140,11 +140,20 @@ export default function AgentRunMessage({
   onRetry,
   retryAvailable = false,
 }) {
+  const stepsRef = React.useRef(null);
   const isComplete = run.status === "complete";
   const showDetails = !isComplete || !run.collapsed;
   const canRetry = retryAvailable && (
     run.status === "failed" || run.status === "cancelled"
   );
+  React.useEffect(() => {
+    if (run.status === "running") {
+      stepsRef.current?.scrollTo?.({
+        top: stepsRef.current.scrollHeight,
+        behavior: "auto",
+      });
+    }
+  }, [run.events.length, run.status]);
 
   return (
     <section
@@ -175,7 +184,7 @@ export default function AgentRunMessage({
       )}
 
       {showDetails && (
-        <div className="agent-run-steps">
+        <div className="agent-run-steps" ref={stepsRef}>
           {run.events.map((event, index) => (
             <RunEvent key={event.id ?? `${event.type}-${index}`} event={event} />
           ))}

@@ -45,7 +45,8 @@ test("creates, resumes, updates, and resets farmer memory without storing the be
     lastResult: null,
     preferences: {},
     conversationSummary: "",
-    version: 1,
+    sessions: [],
+    version: 2,
     updatedAt: "2026-07-24T19:00:00.000Z",
   });
 
@@ -62,7 +63,7 @@ test("creates, resumes, updates, and resets farmer memory without storing the be
   assert.deepEqual(resumed, updated);
   assert.equal(JSON.stringify(savedRecords).includes(created.memoryId), false);
   assert.deepEqual(Object.keys(savedRecords.at(-1)).sort(), ["id", "lastResult", "profile"]);
-  assert.equal(savedRecords.at(-1).lastResult.__agrisenseMemory.version, 1);
+  assert.equal(savedRecords.at(-1).lastResult.__agrisenseMemory.version, 2);
 
   assert.equal(await service.reset(created.memoryId), true);
   assert.equal(await service.load(created.memoryId), null);
