@@ -65,6 +65,10 @@ test("no-key explanation uses the deterministic grounded builder", async () => {
   assert.equal(result.usage, null);
   assert.deepEqual(result.trace, []);
   assertGroundedRecoveryText(result.text);
+  assert.match(result.text, /^## Recommendation/m);
+  assert.match(result.text, /- \*\*Farm profile:\*\*/);
+  assert.match(result.text, /> \*\*Planning boundary:\*\*/);
+  assert.ok(result.text.split("\n").length >= 7);
 });
 
 test("tool-loop failure returns a sanitized deterministic recovery", async () => {

@@ -111,7 +111,7 @@ test("visual system includes high-contrast tokens, keyboard focus, and reduced m
 test("narrow layouts contain flex, grid, and long-content overflow", () => {
   assertIncludesAll(compactCss, [
     "body{margin:0;max-width:100%;overflow-x:hidden;",
-    "main,.layout,.panel,.hero,.status,form,input,pre{min-width:0}",
+    "main,.layout,.panel,.hero,.status,form,input,textarea,pre{min-width:0}",
     "input{width:100%;max-width:100%",
     "a,p,small,dd{overflow-wrap:anywhere}",
     "@media(max-width:480px)",
@@ -316,4 +316,45 @@ test("post-plan edits use lightweight chat and an explicit persistent plan actio
   ]) {
     assert.ok(revisionUiSource.includes(expected), `missing conversational revision contract: ${expected}`);
   }
+});
+
+test("farmer transcript uses polished message rows and deterministic pinning", () => {
+  assertIncludesAll(appSource, [
+    'role="log"',
+    'aria-live="polite"',
+    "message-row",
+    "message-avatar",
+    "message-body",
+    "chat-composer",
+    "markTranscriptInteraction",
+    "pinTranscript(messages)",
+  ]);
+  for (const expected of [
+    ".chat-heading",
+    ".message-row",
+    ".message-avatar",
+    ".message-body",
+    ".chat-composer",
+    ".plan-revision-card",
+    ".stale-plan-notice",
+  ]) {
+    assert.ok(cssSource.includes(expected), `missing transcript visual contract: ${expected}`);
+  }
+  assert.equal(appSource.includes('behavior: "smooth"'), false);
+});
+
+test("composer and recommendation support polished multiline reading", () => {
+  assertIncludesAll(appSource, [
+    "<textarea",
+    "rows={1}",
+    "onKeyDown={handleComposerKeyDown}",
+    "event.shiftKey",
+    "requestSubmit()",
+  ]);
+  assertIncludesAll(cssSource, [
+    ".chat-composer textarea",
+    "field-sizing:content",
+    "max-height:132px",
+    "scroll-padding-block:",
+  ]);
 });

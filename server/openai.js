@@ -55,14 +55,17 @@ function deterministicExplanation(context, prefix = "") {
   const weather = rationale.liveWeather;
   const sourceIds = rationale.rag.sourceIds.length ? rationale.rag.sourceIds.join(", ") : "none";
   return [
-    prefix,
-    `${best.name} ranks first at ${best.suitability}% suitability.`,
-    `Farm profile: ${profile.location}; ${profile.farmSizeAcres} acres; ${profile.soilType} soil; ${profile.waterAvailability} water; BDT ${profile.budgetBdt} budget; ${profile.targetSeason} season.`,
-    `Live weather: ${weather.precipitationMm} mm rain and ${weather.meanTemperatureC} C mean temperature.`,
-    `RAG evidence: suitability ${rationale.rag.suitabilityScore ?? "unavailable"}; source IDs ${sourceIds}.`,
-    `Penalties: water ${rationale.penalties.waterPenalty}; budget ${rationale.penalties.budgetPenalty}.`,
-    rationale.assumptionBoundary,
-  ].filter(Boolean).join(" ");
+    prefix ? `> **${prefix}**` : "",
+    "## Recommendation",
+    `**${best.name}** ranks first at **${best.suitability}% suitability**.`,
+    "",
+    `- **Farm profile:** ${profile.location}; ${profile.farmSizeAcres} acres; ${profile.soilType} soil; ${profile.waterAvailability} water; BDT ${profile.budgetBdt} budget; ${profile.targetSeason} season.`,
+    `- **Live weather:** ${weather.precipitationMm} mm rain and ${weather.meanTemperatureC} C mean temperature.`,
+    `- **Retrieved evidence:** suitability ${rationale.rag.suitabilityScore ?? "unavailable"}; source IDs ${sourceIds}.`,
+    `- **Penalties:** water ${rationale.penalties.waterPenalty}; budget ${rationale.penalties.budgetPenalty}.`,
+    "",
+    `> **Planning boundary:** ${rationale.assumptionBoundary}`,
+  ].filter(Boolean).join("\n");
 }
 
 export async function explainRecommendation(context, openai = client()) {

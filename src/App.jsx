@@ -8,6 +8,7 @@ import {
   failAgentRun,
   toggleRunCollapsed,
 } from "./agent-run.js";
+import { isNearTranscriptBottom, pinTranscript } from "./chat-scroll.js";
 import AgentRunMessage from "./components/AgentRunMessage.jsx";
 import EvidenceGroupList from "./components/EvidenceGroupList.jsx";
 import Markdown from "./components/Markdown.jsx";
@@ -197,6 +198,7 @@ export default function App() {
   const runSequence = useRef(0);
   const messagesRef = useRef(null);
   const keepMessagesPinnedRef = useRef(true);
+  const transcriptInteractionRef = useRef(false);
   const best = useMemo(() => result?.crops?.[0], [result]);
   const latestRun = useMemo(() => {
     for (let index = conversation.length - 1; index >= 0; index -= 1) {
@@ -212,9 +214,13 @@ export default function App() {
   useEffect(() => {
     const messages = messagesRef.current;
     if (messages && keepMessagesPinnedRef.current) {
-      messages.scrollTo({ top: messages.scrollHeight, behavior: "smooth" });
+      pinTranscript(messages);
     }
   }, [conversation]);
+
+  function markTranscriptInteraction() {
+    transcriptInteractionRef.current = true;
+  }
 
   const status = revision.readyToPlan
     ? {
@@ -400,6 +406,13 @@ export default function App() {
       setError(err.message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  function handleComposerKeyDown(event) {
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
     }
   }
 
@@ -626,51 +639,63 @@ export default function App() {
           <div
             className="messages"
             ref={messagesRef}
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions text"
+            onWheel={markTranscriptInteraction}
+            onTouchStart={markTranscriptInteraction}
+            onPointerDown={markTranscriptInteraction}
             onScroll={() => {
               const messages = messagesRef.current;
-              if (!messages) return;
-              keepMessagesPinnedRef.current =
-                messages.scrollHeight - messages.scrollTop - messages.clientHeight < 80;
+              if (!messages || !transcriptInteractionRef.current) return;
+              keepMessagesPinnedRef.current = isNearTranscriptBottom(messages);
             }}
           >
             {conversation.map((item, index) => (
-              <div key={`${item.role}-${index}`} className={item.role}>
-                <b>{item.role === "agent" ? "AgriSense" : "Farmer"}</b>
-                {item.run ? (
-                  <AgentRunMessage
-                    run={item.run}
-                    onToggle={(nextRun) => setConversation((items) => updateConversationRun(
-                      items,
-                      item.run.id,
-                      () => nextRun,
-                    ))}
-                    onCancel={cancelRequest}
-                    onRetry={retryLastRequest}
-                    retryAvailable={item.run.id === latestRun?.id}
-                  />
-                ) : item.role === "agent" ? (
-                  <>
-                    <Markdown>{item.text}</Markdown>
-                    <PlanRevisionCard
-                      revision={item.revision}
-                      canCreate={canCreatePlanFrom(conversation, index)}
-                      busy={busy}
-                      onCreatePlan={() => void createUpdatedPlan()}
+              <div key={`${item.role}-${index}`} className={`message-row ${item.role}${item.run ? " has-run" : ""}`}>
+                <span className="message-avatar" aria-hidden="true">
+                  {item.role === "agent" ? "A" : "F"}
+                </span>
+                <div className="message-body">
+                  <b>{item.role === "agent" ? "AgriSense" : "Farmer"}</b>
+                  {item.run ? (
+                    <AgentRunMessage
+                      run={item.run}
+                      onToggle={(nextRun) => setConversation((items) => updateConversationRun(
+                        items,
+                        item.run.id,
+                        () => nextRun,
+                      ))}
+                      onCancel={cancelRequest}
+                      onRetry={retryLastRequest}
+                      retryAvailable={item.run.id === latestRun?.id}
                     />
-                  </>
-                ) : (
-                  <p>{item.text}</p>
-                )}
+                  ) : item.role === "agent" ? (
+                    <>
+                      <Markdown>{item.text}</Markdown>
+                      <PlanRevisionCard
+                        revision={item.revision}
+                        canCreate={canCreatePlanFrom(conversation, index)}
+                        busy={busy}
+                        onCreatePlan={() => void createUpdatedPlan()}
+                      />
+                    </>
+                  ) : (
+                    <p>{item.text}</p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-          <form onSubmit={submit} aria-label="Farm context message">
+          <form className="chat-composer" onSubmit={submit} aria-label="Farm context message">
             <label className="sr-only" htmlFor="farm-message">Describe your farm</label>
-            <input
+            <textarea
               id="farm-message"
               name="farmMessage"
+              rows={1}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
+              onKeyDown={handleComposerKeyDown}
               placeholder="Example: I have 1 acre in Gazipur..."
               disabled={busy}
               aria-invalid={Boolean(error)}
