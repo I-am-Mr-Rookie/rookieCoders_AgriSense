@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
 
+import { assistantText } from "../shared/assistant.js";
+
 const DEMO_PROFILE = {
   location: "Gazipur",
   farmSizeAcres: 1,
@@ -34,7 +36,7 @@ export default function App() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Request failed");
       if (payload.message) setConversation((items) => [...items, { role: "farmer", text: payload.message }]);
-      setConversation((items) => [...items, { role: "agent", text: data.assistant }]);
+      setConversation((items) => [...items, { role: "agent", text: assistantText(data.assistant) }]);
       if (data.crops) setResult(data);
       setMessage("");
     } catch (err) {
@@ -75,7 +77,7 @@ export default function App() {
           <h3>Recommendation</h3>
           {!best ? <p className="muted">Complete the intake or run the demo.</p> : <>
             <div className="best"><span>Best fit</span><strong>{best.name}</strong><em>{best.suitability}% suitability · {best.riskLevel} risk</em></div>
-            <dl><div><dt>7-day rain</dt><dd>{result.weather.precipitationMm.toFixed(1)} mm</dd></div><div><dt>Mean temperature</dt><dd>{result.weather.meanTemperatureC.toFixed(1)}°C</dd></div><div><dt>BARC zoning score</dt><dd>{best.scoreComponents.ragSuitability ?? "Unavailable"}</dd></div><div><dt>Expected revenue</dt><dd><Money value={best.financials.revenueBdt} /></dd></div><div><dt>Net profit</dt><dd><Money value={best.financials.netProfitBdt} /></dd></div><div><dt>ROI</dt><dd>{best.financials.roiPercent}%</dd></div><div><dt>Break-even yield</dt><dd>{best.financials.breakEvenYieldKg.toFixed(0)} kg</dd></div></dl>
+            <dl><div><dt>7-day rain</dt><dd>{result.weather.precipitationMm.toFixed(1)} mm</dd></div><div><dt>Mean temperature</dt><dd>{result.weather.meanTemperatureC.toFixed(1)}°C</dd></div><div><dt>BARC zoning score</dt><dd>{best.scoreComponents.ragSuitability ?? "Unavailable"}</dd></div><div><dt>Itemized cost</dt><dd><ul>{Object.entries(best.financials.costBreakdownBdt).map(([name, value]) => <li key={name}>{name}: <Money value={value} /></li>)}</ul></dd></div><div><dt>Total cost</dt><dd><Money value={best.financials.totalCostBdt} /></dd></div><div><dt>Expected yield</dt><dd>{best.financials.expectedYieldKg.toFixed(0)} kg at <Money value={best.financials.pricePerKgBdt} /> per kg</dd></div><div><dt>Expected revenue</dt><dd><Money value={best.financials.revenueBdt} /></dd></div><div><dt>Net profit</dt><dd><Money value={best.financials.netProfitBdt} /></dd></div><div><dt>ROI</dt><dd>{best.financials.roiPercent}%</dd></div><div><dt>Break-even yield</dt><dd>{best.financials.breakEvenYieldKg.toFixed(0)} kg</dd></div></dl>
           </>}
         </section>
       </div>

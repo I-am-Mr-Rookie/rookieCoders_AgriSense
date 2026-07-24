@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 
+import { assistantText } from "../shared/assistant.js";
 import { buildSeasonPlan, createTraceEntry, getMissingFields, rankCrops } from "./core.js";
 import { databaseMode, initializeDatabase, loadSession, saveSession } from "./db.js";
 import { explainRecommendation, extractProfilePatch, openAiMode } from "./openai.js";
@@ -91,7 +92,7 @@ app.post("/api/session/message", async (req, res) => {
 
     session.lastResult = { weather, knowledge, crops, seasonPlan, explanation: explanation.text, rag, trace };
     await saveSession(session);
-    res.json({ sessionId, profile: session.profile, assistant: explanation, ...session.lastResult });
+    res.json({ sessionId, profile: session.profile, assistant: assistantText(explanation), ...session.lastResult });
   } catch (error) {
     res.status(502).json({ error: error.message, phase: "Tier-0", recoverable: true });
   }
