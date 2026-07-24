@@ -1,0 +1,147 @@
+const REQUIRED_FIELDS = [
+  "location",
+  "farmSizeAcres",
+  "soilType",
+  "waterAvailability",
+  "budgetBdt",
+  "targetSeason",
+];
+
+const CROPS = [
+  { id: "mustard", name: "Mustard", idealRainMm: 20, idealTempC: 22, waterNeed: "low", baseCostBdt: 30000, yieldKg: 800, priceBdt: 75, durationDays: 95 },
+  { id: "potato", name: "Potato", idealRainMm: 35, idealTempC: 19, waterNeed: "medium", baseCostBdt: 90000, yieldKg: 8000, priceBdt: 25, durationDays: 105 },
+  { id: "maize", name: "Maize", idealRainMm: 50, idealTempC: 24, waterNeed: "medium", baseCostBdt: 55000, yieldKg: 3000, priceBdt: 30, durationDays: 120 },
+  { id: "boro-rice", name: "Boro rice", idealRainMm: 90, idealTempC: 26, waterNeed: "high", baseCostBdt: 65000, yieldKg: 2200, priceBdt: 35, durationDays: 145 },
+];
+
+const KNOWLEDGE = [
+  {
+    id: "barc-frg-2024",
+    title: "Bangladesh Fertilizer Recommendation Guide 2024",
+    text: "Bangladesh crop fertilizer recommendations should be adjusted for crop, soil condition, nutrient status and management context. Mustard fertilizer decisions must remain tied to local soil evidence.",
+    sourceUrl: "https://apps.barc.gov.bd/fertilizer_recommendation/FRG%20English%2030.10.2024.pdf",
+  },
+  {
+    id: "brri-knowledge",
+    title: "Bangladesh Rice Knowledge Bank",
+    text: "Rice cultivation guidance includes variety selection, fertilizer management, irrigation, pest management and crop-stage practices for Bangladesh.",
+    sourceUrl: "https://knowledgebank-brri.org/",
+  },
+  {
+    id: "fao-crop-calendar",
+    title: "FAO Crop Calendar",
+    text: "Crop calendars connect planting and harvest windows with location, crop and season; local dates must be validated before farmer use.",
+    sourceUrl: "https://cropcalendar.apps.fao.org/",
+  },
+  {
+    id: "open-meteo-docs",
+    title: "Open-Meteo Forecast API",
+    text: "Forecast responses expose temperature and precipitation values for geographic coordinates and can use the location timezone.",
+    sourceUrl: "https://open-meteo.com/en/docs",
+  },
+];
+
+export function getMissingFields(profile = {}) {
+  return REQUIRED_FIELDS.filter((field) => {
+    const value = profile[field];
+    return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
+  });
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+export function calculateFinancials({ farmSizeAcres, yieldPerAcreKg, pricePerKgBdt, costsPerAcre }) {
+  const costBreakdownBdt = Object.fromEntries(
+    Object.entries(costsPerAcre).map(([name, value]) => [name, Math.round(value * farmSizeAcres)]),
+  );
+  const totalCostBdt = Object.values(costBreakdownBdt).reduce((sum, value) => sum + value, 0);
+  const expectedYieldKg = yieldPerAcreKg * farmSizeAcres;
+  const revenueBdt = Math.round(expectedYieldKg * pricePerKgBdt);
+  const netProfitBdt = revenueBdt - totalCostBdt;
+
+  return {
+    costBreakdownBdt,
+    totalCostBdt,
+    expectedYieldKg,
+    pricePerKgBdt,
+    revenueBdt,
+    netProfitBdt,
+    roiPercent: totalCostBdt ? Math.round((netProfitBdt / totalCostBdt) * 10000) / 100 : 0,
+    breakEvenYieldKg: totalCostBdt / pricePerKgBdt,
+  };
+}
+
+export function rankCrops(profile, weather) {
+  return CROPS.map((crop) => {
+    const rainScore = clamp(40 - Math.abs(weather.precipitationMm - crop.idealRainMm) * 0.55, 0, 40);
+    const temperatureScore = clamp(30 - Math.abs(weather.meanTemperatureC - crop.idealTempC) * 3, 0, 30);
+    const soilScore = ["loam", "sandy loam", "clay loam"].includes(String(profile.soilType).toLowerCase()) ? 15 : 9;
+    const waterPenalty = profile.waterAvailability === "limited" && crop.waterNeed === "high" ? 12 : 0;
+    const budgetPenalty = profile.budgetBdt < crop.baseCostBdt * profile.farmSizeAcres ? 15 : 0;
+    const suitability = Math.round(clamp(rainScore + temperatureScore + soilScore + 15 - waterPenalty - budgetPenalty, 0, 100));
+    const financials = calculateFinancials({
+      farmSizeAcres: profile.farmSizeAcres,
+      yieldPerAcreKg: crop.yieldKg,
+      pricePerKgBdt: crop.priceBdt,
+      costsPerAcre: {
+        seed: crop.baseCostBdt * 0.16,
+        fertilizer: crop.baseCostBdt * 0.26,
+        irrigation: crop.baseCostBdt * 0.18,
+        labor: crop.baseCostBdt * 0.4,
+      },
+    });
+
+    return {
+      ...crop,
+      suitability,
+      riskLevel: suitability >= 75 ? "low" : suitability >= 55 ? "medium" : "high",
+      roughProfitBdt: financials.netProfitBdt,
+      financials,
+      weatherEvidence: {
+        precipitationMm: weather.precipitationMm,
+        meanTemperatureC: weather.meanTemperatureC,
+      },
+    };
+  }).sort((a, b) => b.suitability - a.suitability || b.roughProfitBdt - a.roughProfitBdt);
+}
+
+function addDays(dateString, days) {
+  const date = new Date(`${dateString}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+export function buildSeasonPlan(cropId, startDate) {
+  const crop = CROPS.find((item) => item.id === cropId) ?? CROPS[0];
+  return [
+    { stage: "land_preparation", date: addDays(startDate, 0), action: "Prepare and level the field; verify drainage." },
+    { stage: "sowing", date: addDays(startDate, 7), action: `Sow ${crop.name} within the selected Rabi window.` },
+    { stage: "fertilizer", date: addDays(startDate, 22), action: "Apply the first scheduled fertilizer dose after checking the forecast and retrieved guide." },
+    { stage: "irrigation", date: addDays(startDate, 35), action: "Irrigate only after comparing field moisture with forecast rainfall." },
+    { stage: "weed_pest", date: addDays(startDate, 50), action: "Inspect weeds and pests; record symptoms before treatment." },
+    { stage: "harvest", date: addDays(startDate, crop.durationDays), action: `Harvest ${crop.name} at crop maturity and record realized yield.` },
+  ];
+}
+
+function terms(text) {
+  return new Set(String(text).toLowerCase().match(/[a-z0-9]+/g) ?? []);
+}
+
+export function retrieveKnowledge(query, limit = 3) {
+  const queryTerms = terms(query);
+  return KNOWLEDGE.map((item) => {
+    const documentTerms = terms(`${item.title} ${item.text}`);
+    const score = [...queryTerms].reduce((sum, term) => sum + (documentTerms.has(term) ? 1 : 0), 0);
+    return { ...item, score };
+  }).sort((a, b) => b.score - a.score || a.title.localeCompare(b.title)).slice(0, limit);
+}
+
+export function createTraceEntry(tool, parameters, result, durationMs) {
+  return { tool, parameters, result, timestamp: new Date().toISOString(), durationMs };
+}
+
+export function getCrop(cropId) {
+  return CROPS.find((crop) => crop.id === cropId) ?? CROPS[0];
+}
