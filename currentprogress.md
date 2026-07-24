@@ -1,10 +1,10 @@
 # AgriSense Tier 0 — Current Progress
 
-**As of:** 24 July 2026, 21:40 Asia/Dhaka
+**As of:** 24 July 2026, 23:10 Asia/Dhaka
 
 **Repository:** <https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense>
 
-**Status:** Tier 0 is deployed and verified at <https://rookiecoders.tech>.
+**Status:** The hardened Tier 0 release candidate passes its local gate. Exact-SHA deployment and public E4 verification are still required before calling this candidate deployed.
 
 ## Executive verdict
 
@@ -15,22 +15,26 @@ The current revision covers all eight Tier 0 product surfaces locally:
 | Requirement | Current evidence |
 |---|---|
 | Targeted intake | Six required fields; only missing fields are requested. |
+| Input boundary | Canonical Bangladesh district/alias validation, strict decimal bounds, controlled 400s, and sanitized dependency failures. |
 | Live weather | Open-Meteo seven-day Bangladesh forecast feeds ranking. |
 | Three or more crops | Four Rabi crops ranked from profile, weather, finance, and BARC zoning. |
 | Season plan | Six dated checkpoints from land preparation through harvest. |
 | Financials | Itemized cost, yield, revenue, profit, ROI, and break-even. |
-| Explained reasoning | Sol tool loop when configured; labeled deterministic explanation otherwise. |
-| RAG affects advice | 1,976 indexed fact cards across nine datasets; BARC zoning is blended into crop scores and retrieved records attach to plan stages. |
+| Explained reasoning | Sol tool loop when configured; labeled deterministic explanation otherwise; safe deterministic recovery if the loop fails. |
+| RAG affects advice | 1,976 indexed fact cards across nine datasets; meaningful queries exclude zero-overlap rows; BARC zoning is blended into crop scores and every crop exposes its inputs and source IDs. |
 | Visible trace | Parameters, results, timestamps, durations, RAG actions, and model-selected tool calls are shown. |
+| Judge path | Every demo starts a fresh session; honest accessible status/error states and narrow-screen containment are regression-tested. |
 
 ## Verification
 
-`npm.cmd run check` passed:
+The current merged candidate passed `npm.cmd run check`:
 
-- 15 tests, 15 passed, 0 failed;
+- 58 tests, 58 passed, 0 failed;
 - production Vite build passed;
-- tool-loop tests cover allow-listing, duplicate rejection, call limits, reasoning/function output round trips, and secret redaction;
-- RAG tests cover all nine datasets, blocked-row exclusion, Gazipur mustard provenance, bounded scoring, plan evidence, and instruction-like source text.
+- input/recovery tests cover strict districts and decimals, save-state truth, retry boundaries, and bounded logging;
+- tool-loop tests cover allow-listing, duplicate rejection, call limits, deterministic recovery, reasoning/function output round trips, and secret redaction;
+- RAG tests cover all nine datasets, blocked-row exclusion, positive-overlap retrieval, Gazipur mustard provenance, bounded scoring, plan evidence, rationales, and instruction-like source text;
+- UI tests cover session fallback, fresh-demo isolation, honest ARIA states, financial labels, mojibake, and narrow layout contracts.
 
 Medium HTTP evaluation passed without local secrets:
 
@@ -40,14 +44,16 @@ Medium HTTP evaluation passed without local secrets:
 
 The live weather response is time-sensitive. A separate bounded server-side probe used the supplied OpenAI key transiently and passed: `gpt-5.6-sol` at medium effort selected all five required read-only tools (`inspect_weather`, `inspect_rag_evidence`, `inspect_ranked_crops`, `inspect_season_plan`, and `inspect_financials`) before returning its explanation. No key value was printed, traced, copied into the client, or committed.
 
-Production verification on the DigitalOcean Droplet passed:
+Historical production baseline verification passed before this hardening campaign:
 
-- checkout code revision: `ae888fba0b530506bfd3d7f95c2954a4467771ab`;
+- checkout code revision: `cbb0450d062b383e6cbd02dde34adf7919d60186`;
 - PM2 process `agrisense`: online and saved;
 - HTTPS health: `Tier-0`, PostgreSQL, `gpt-5.6-sol/high`, nine datasets, and 1,976 indexed fact cards;
 - public production flow: four crops, six checkpoints, six citations, five evidence-backed stages, and all five Sol-selected inspection tools;
 - public URL: <https://rookiecoders.tech>;
 - the six pre-existing Droplet-only RAG commits remain preserved on `server-rag-backup-20260724T153137Z`.
+
+This evidence is not silently transferred to the newer candidate. Final release proof requires public `/api/health.releaseRevision` to equal the pushed SHA, a restart/retry probe, a clean clone, and visible browser checks.
 
 ## Truth boundaries
 

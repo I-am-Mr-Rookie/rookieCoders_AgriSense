@@ -1,4 +1,4 @@
-# Re-engineered Prompt - AgriSense Tier 0 Rescue
+# Re-engineered Prompt - AgriSense Tier 0 Release Closure
 
 ## Role Stack
 
@@ -9,7 +9,7 @@
 
 ## Objective
 
-Repair the existing `T0-Initial` AgriSense repository into the strongest defensible Tier 0 possible in an 85-minute rescue window ending at 2026-07-24 22:30 Asia/Dhaka. Reuse the working vertical slice, integrate Kawsar's updated RAG corpus, make real retrieved evidence and live weather affect the recommendation, add a bounded GPT-5.6 Sol tool-selection loop, run a medium evaluation after the Tier 0 implementation is complete, deploy the exact tested revision to the existing DigitalOcean target, and push the verified revision to GitHub.
+Close and verify the hardened AgriSense Tier 0 release candidate. Preserve the implemented vertical slice, structured RAG, deterministic validation/ranking/finance, bounded GPT-5.6 Sol tool loop, deterministic recovery, and fresh judge path. Finish only evidence-backed Critical/Important defects, run the complete release gate, deploy the exact tested revision to the existing DigitalOcean target, and push/verify that same revision on GitHub.
 
 Do not implement Tier 1, Tier 2, bdapps, embeddings, broad UI polish, or unrelated refactors during this rescue.
 
@@ -28,14 +28,13 @@ Do not implement Tier 1, Tier 2, bdapps, embeddings, broad UI polish, or unrelat
 - Repository: `C:\Users\HP\Documents\IUT Hackathon\Final\Claude`
 - Remote: `https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense.git`
 - Branch: `main`
-- Starting SHA: `73ccf3ce57b5ddd2b34ad11cd08722295a697ee7`
-- Current app tests: 6/6 pass.
-- Current production build: passes.
-- Current app coverage is shallow and not Tier 0 complete.
-- Kawsar's corpus contains 3,163 normalized chunks, nine structured datasets, and a tested BM25 RAG engine.
-- Kawsar RAG's documented Windows test command is broken, but `node --test test\rag.test.js` passes 7/7.
+- Historical production baseline SHA: `cbb0450d062b383e6cbd02dde34adf7919d60186`.
+- Current merged candidate: 58/58 tests and the Vite production build pass after the Unicode retrieval follow-up.
+- Independent Task 1 specification/quality review and Task 2/3 specification review passed; the final Task 2 quality follow-up must be rechecked.
+- The included corpus indexes 1,976 unblocked fact cards across nine structured datasets.
+- Validation, persistence truth, positive-overlap retrieval, crop rationales, model recovery, fresh-demo state, accessibility, responsive CSS, and release identity are implemented.
 - Kawsar corpus limitations must remain visible: production costs are assumptions, calendar/irrigation coverage is partial, some Bengali extraction is garbled, and `PRIOR_PARTIAL` records require caution.
-- DigitalOcean, PostgreSQL, and live OpenAI paths are not yet verified in this session.
+- DigitalOcean/PostgreSQL/OpenAI passed on the historical baseline, but those results do not prove the current candidate. Exact-SHA target verification remains mandatory.
 
 ## Frozen Product Decisions
 
@@ -57,25 +56,14 @@ The phrase "after Tier 1" is treated as a Wispr Flow mismatch meaning **after Ti
 
 In a step-by-step logical process:
 
-1. Freeze the official Tier 0 acceptance matrix and record the current baseline.
-2. Copy only the required Kawsar structured datasets and provenance material into the application; never copy `.env`, keys, raw secret files, or the corpus's credential-bearing local file.
-3. Write failing application tests for RAG loading, district/crop evidence, weather-plus-RAG ranking, evidence-bearing plan steps, bounded tool execution, trace sanitization, and Windows-safe test execution.
-4. Implement the smallest in-process RAG adapter that loads Kawsar's structured datasets, produces provenance-rich fact cards, filters by crop/geography/dataset, and returns deterministic ranked results.
-5. Change crop ranking so BARC suitability evidence, live weather, water, soil, budget, and transparent assumptions all have visible contributions. Never silently invent unsupported agronomy.
-6. Ground fertilizer and season-plan actions in retrieved records where available. Label missing coverage and team-assumption dates/costs.
-7. Add a bounded GPT-5.6 Sol Responses API function-calling loop:
-   - allow-list only application tools;
-   - strict JSON schemas;
-   - maximum eight calls;
-   - validate every argument;
-   - preserve reasoning/function-call items across turns;
-   - record sanitized tool parameters, results, durations, source IDs, and failure state;
-   - stop safely on invalid, repeated, or unavailable calls.
-8. Preserve a deterministic labeled fallback for local development, but never present it as proof of the live agent path.
-9. Upgrade the UI so judges can inspect per-number provenance, assumption labels, retrieval evidence, agent/model mode, and recoverable failures.
-10. Run focused tests, full tests, build, local HTTP integration, a secret scan, and one medium adversarial evaluation. Fix only evidence-backed Tier 0 failures.
-11. Use only the signed-in Codex in-app browser for target UI work. Do not use Chrome, Playwright CLI, or Playwright MCP.
-12. Deploy the exact tested revision to the existing DigitalOcean target, verify health and one complete farmer flow, record the deployed SHA/URL/modes, then commit and push.
+1. Recheck the last independent review finding and fix only Critical/Important defects with RED/GREEN evidence.
+2. Freeze the candidate with `npm.cmd run check`, `git diff --check`, tracked-secret scanning, and a clean working tree except the intentionally untracked roadmap.
+3. Commit and push the exact candidate, verify the remote SHA, then clone it into a fresh directory and run `npm.cmd ci`, tests, and build.
+4. Fast-forward the preserved DigitalOcean checkout, install, test, build, set `APP_REVISION` to the exact commit, restart/save PM2, and read the same SHA from public health.
+5. Run public invalid-input, partial-save/restart/complete, Gazipur plan, model-tool-trace, and sanitized-error probes.
+6. Use the explicitly authorized Chrome extension control plus visible Computer Use to verify DOM content, console cleanliness, and the judge path; use no Playwright.
+7. Prove `scrollWidth <= clientWidth` at 320, 360, and 375 px.
+8. Update the defect ledger and score the frozen rubric once. Claim 95 only if the evidence sum is at least 95; otherwise publish the lower score and exact blockers.
 
 ## Required Tier 0 Evidence
 

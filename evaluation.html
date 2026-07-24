@@ -16,9 +16,9 @@
 </head>
 <body><main>
   <header>
-    <span class="verdict">DEPLOYED TIER 0: PRODUCTION FLOW PASSED</span>
+    <span class="verdict">TIER 0 RELEASE CANDIDATE: LOCAL GATE PASSED</span>
     <h1>AgriSense evidence-backed self-test</h1>
-    <p>Frozen at 24 July 2026, 21:08 Asia/Dhaka. This page reports executed evidence, not aspirational capability.</p>
+    <p>Updated at 24 July 2026, 23:10 Asia/Dhaka. Candidate claims below are local unless explicitly labeled as historical production evidence; final release status requires an exact-SHA public probe.</p>
   </header>
 
   <section class="card"><h2>Starting-state assessment</h2>
@@ -27,21 +27,26 @@
 
   <section class="card"><h2>Tier 0 acceptance ledger</h2><div class="scroll"><table>
     <thead><tr><th>Official capability</th><th>State</th><th>Executable evidence</th><th>Boundary</th></tr></thead><tbody>
-      <tr><td>Targeted intake</td><td class="pass">PASS</td><td>Missing-field unit test.</td><td>Free-text extraction requires server OpenAI key.</td></tr>
+      <tr><td>Targeted intake</td><td class="pass">PASS</td><td>Canonical Bangladesh district, strict decimal, missing-field, persistence, and sanitized-error probes.</td><td>Free-text extraction requires the server OpenAI key; Tier 0 intentionally accepts district-level locations.</td></tr>
       <tr><td>Live weather</td><td class="pass">PASS</td><td>HTTP flow returned Open-Meteo.</td><td>Network-dependent and time-sensitive.</td></tr>
       <tr><td>3+ crops</td><td class="pass">PASS</td><td>Four returned; rainfall and RAG alter ranking.</td><td>Base coefficients are team assumptions.</td></tr>
       <tr><td>Season plan</td><td class="pass">PASS</td><td>Six stages; 5 evidence-backed, 1 labeled assumption in Gazipur probe.</td><td>Exact dates need local validation.</td></tr>
-      <tr><td>Financials</td><td class="pass">PASS</td><td>Scaling and consistency unit test.</td><td>Prices, yield, costs are demo assumptions.</td></tr>
-      <tr><td>Explained reasoning</td><td class="pass">PASS</td><td>Bounded loop unit-tested; live GPT-5.6 Sol/medium selected all five evidence tools and completed.</td><td>Exact target-environment repeat remains pending.</td></tr>
-      <tr><td>RAG feeds advice</td><td class="pass">PASS</td><td>1,976 fact cards; BARC score blended into recommendation; plan receives source records.</td><td>Lexical/structured retrieval, not embeddings.</td></tr>
+      <tr><td>Financials</td><td class="pass">PASS</td><td>Scaling/consistency probe and visible team-assumption label.</td><td>Prices, yield, costs are demo assumptions, not live quotes.</td></tr>
+      <tr><td>Explained reasoning</td><td class="pass">PASS</td><td>Bounded loop and sanitized deterministic recovery are tested; a historical live probe selected all five evidence tools.</td><td>Exact target-environment repeat remains a release gate.</td></tr>
+      <tr><td>RAG feeds advice</td><td class="pass">PASS</td><td>1,976 fact cards; positive-overlap retrieval; BARC score blended into recommendations; every crop exposes source IDs and rationale.</td><td>Lexical/structured retrieval, not embeddings; no unverified scrape was added.</td></tr>
       <tr><td>Visible trace</td><td class="pass">PASS</td><td>HTTP response exposed 5 operations; UI renders raw trace.</td><td>Secrets are redacted; model calls appear only when configured.</td></tr>
     </tbody>
   </table></div></section>
 
   <section class="card"><h2>Executed medium evaluation</h2>
     <pre>npm.cmd run check
-tests 15 | pass 15 | fail 0
+tests 58 | pass 58 | fail 0
 vite production build: PASS
+
+Focused hardening probes
+strict district and persistence truth=PASS
+positive-overlap RAG and model recovery=PASS
+fresh demo, accessibility, financial label, responsive CSS=PASS
 
 Gazipur HTTP probe
 health=true; datasets=9; indexed=1976; crops=4; stages=6
@@ -54,12 +59,12 @@ explanation returned=true</pre>
   </section>
 
   <section class="card"><h2>Conservative rubric outlook</h2>
-    <p><strong>Estimated readiness: 78/100, not a judge score.</strong> Strongest areas are Tier 0 scope, visible trace, structured Bangladesh knowledge, real model tool selection, PostgreSQL-backed production execution, and testability. Material deductions remain for partial agronomic calendar/economics validation, no bdapps integration, and deferred Tier 1/2 innovation.</p>
-    <pre>DigitalOcean production probe
+    <p><strong>Frozen target: 95/100, not a judge score.</strong> This target is earned only if the exact pushed SHA passes clean-clone, DigitalOcean restart, public API, Chrome console/DOM, Computer Use, and 320/360/375 px gates. Otherwise the final report must publish the lower evidenced score. Tier 1/2 and bdapps are outside this Tier 0 rubric.</p>
+    <pre>Historical DigitalOcean baseline (revision cbb0450d...)
 url=https://rookiecoders.tech
 health=Tier-0; database=postgresql; model=gpt-5.6-sol/high
 flow=4 crops; 6 stages; 6 citations; 5 model-selected tools
 RAG=9 datasets; 1976 indexed fact cards</pre>
-    <p class="caution">Do not call this production agronomic advice. Deploy and exercise the exact revision before a final submission claim.</p>
+    <p class="caution">Do not call this production agronomic advice. The prior production baseline is not proof of this candidate; require public health.releaseRevision to equal the pushed SHA.</p>
   </section>
 </main></body></html>
