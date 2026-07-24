@@ -214,7 +214,56 @@ git add src/chat-scroll.js src/App.jsx src/styles.css tests/chat-scroll.test.js 
 git commit -m "fix: polish and pin the farmer transcript"
 ```
 
-### Task 5: Farmer-side browser and persistence verification
+### Task 5: Multi-session workspace under one recovery code
+
+**Files:**
+- Modify: `server/memory.js`
+- Modify: `server/index.js`
+- Modify: `server/workflow.js`
+- Create: `src/components/ConversationSidebar.jsx`
+- Create: `tests/memory-sessions.test.js`
+- Modify: `src/App.jsx`
+- Modify: `src/styles.css`
+- Modify: `tests/ui-contract.test.js`
+
+- [ ] **Step 1: Write failing memory-session tests**
+
+Prove that one recovery code can create two sessions, keep separate transcripts and plans, share one profile/preferences object, cap retained sessions/messages, and load legacy version-1 memory as an empty session list.
+
+- [ ] **Step 2: Run focused tests and confirm RED**
+
+Run: `node --test tests/memory-sessions.test.js tests/memory.test.js`
+
+Expected: the current memory service exposes only one top-level plan and summary.
+
+- [ ] **Step 3: Implement version-2 memory sessions**
+
+Add `sessions` to normalized/public memory and serialized writes. Add atomic `createConversationSession` and `appendConversationTurn` operations. Update `savePlan` to attach the plan to `memorySessionId` while preserving every other session and preference.
+
+- [ ] **Step 4: Add session API and workflow integration**
+
+Create one bounded session endpoint for new chats. Pass `memorySessionId` through chat and plan requests so transcripts and plans are persisted without exposing the recovery code to activity or model context.
+
+- [ ] **Step 5: Build the recent-chat workspace**
+
+Add an accessible recent-chat rail, New chat action, active session state, auto-generated titles, and session switching. New chats inherit shared memory but start with an empty transcript and plan.
+
+- [ ] **Step 6: Run focused and build gates**
+
+Run: `node --test tests/memory-sessions.test.js tests/memory.test.js tests/workflow.test.js tests/ui-contract.test.js`
+
+Run: `npm run build`
+
+Expected: all pass.
+
+- [ ] **Step 7: Commit**
+
+```powershell
+git add server/memory.js server/index.js server/workflow.js src/components/ConversationSidebar.jsx src/App.jsx src/styles.css tests/memory-sessions.test.js tests/memory.test.js tests/workflow.test.js tests/ui-contract.test.js
+git commit -m "feat: add recovery-linked conversation sessions"
+```
+
+### Task 6: Farmer-side browser and persistence verification
 
 **Files:**
 - Modify: `docs/superpowers/agrisense-tier1-ui-defect-ledger.md`
@@ -255,4 +304,3 @@ git add docs/superpowers/agrisense-tier1-ui-defect-ledger.md
 git commit -m "docs: record conversational revision verification"
 git push origin codex/agrisense-conversation-revisions
 ```
-

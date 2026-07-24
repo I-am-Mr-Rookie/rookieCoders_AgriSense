@@ -91,6 +91,8 @@ Draft profile changes are saved to the session immediately. When memory is conne
 
 The transcript becomes the primary work surface:
 
+- a compact recent-chats rail follows the familiar ChatGPT/Gemini history pattern;
+- one recovery code acts as a private AgriSense workspace, similar to shared project knowledge across separate Claude chats;
 - compact avatar-led message rows instead of large stacked panels;
 - ordinary assistant replies use a quiet transparent surface;
 - tool activity remains a distinct inset card;
@@ -99,6 +101,32 @@ The transcript becomes the primary work surface:
 - stale recommendations receive a visible but restrained status banner;
 - streaming updates pin instantly while active, with no animation-induced scroll race;
 - keyboard focus, reduced motion, and mobile stacking remain complete.
+
+## Multi-session memory model
+
+One recovery code owns:
+
+- one shared farm profile and farmer preferences;
+- a bounded list of recent conversation sessions;
+- a separate transcript and latest generated plan for each session;
+- the most recently generated plan as the backward-compatible top-level plan.
+
+Each session is:
+
+```js
+{
+  id,
+  title,
+  createdAt,
+  updatedAt,
+  messages: [{ role, text }],
+  lastResult
+}
+```
+
+The list is capped at 20 sessions, each transcript at 80 sanitized text messages, and each message at 4,000 characters. New chats inherit the shared farm profile but do not copy another chat’s transcript or plan. Profile changes update the shared memory; generated plans remain attached to the chat that created them.
+
+The desktop workspace uses three deliberate columns: recent chats, active conversation, and compact farm context. On smaller screens the chat list becomes a horizontal recent-chat strip above the conversation. Empty chats show a centered conversational welcome instead of a large blank cavity.
 
 ## Error and safety behavior
 
@@ -117,4 +145,3 @@ The transcript becomes the primary work surface:
 - Browser reload/resume: the saved profile and updated plan are restored through the existing recovery flow.
 - Automated: deterministic parsing, pending-field continuation, no planning during chat turns, explicit plan gating, memory update, auto-scroll policy, and accessible CTA contracts.
 - Regression: full `npm run check` and `npm audit --omit=dev`.
-
