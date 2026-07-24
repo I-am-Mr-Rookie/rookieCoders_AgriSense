@@ -1,10 +1,10 @@
 # AgriSense Tier 0 — Current Progress
 
-**As of:** 24 July 2026, 21:08 Asia/Dhaka
+**As of:** 24 July 2026, 21:40 Asia/Dhaka
 
 **Repository:** <https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense>
 
-**Status:** local Tier 0 implementation, medium evaluation, and live GPT-5.6 Sol probe pass; DigitalOcean deployment and PostgreSQL verification remain pending.
+**Status:** Tier 0 is deployed and verified at <https://rookiecoders.tech>.
 
 ## Executive verdict
 
@@ -40,6 +40,15 @@ Medium HTTP evaluation passed without local secrets:
 
 The live weather response is time-sensitive. A separate bounded server-side probe used the supplied OpenAI key transiently and passed: `gpt-5.6-sol` at medium effort selected all five required read-only tools (`inspect_weather`, `inspect_rag_evidence`, `inspect_ranked_crops`, `inspect_season_plan`, and `inspect_financials`) before returning its explanation. No key value was printed, traced, copied into the client, or committed.
 
+Production verification on the DigitalOcean Droplet passed:
+
+- checkout code revision: `ae888fba0b530506bfd3d7f95c2954a4467771ab`;
+- PM2 process `agrisense`: online and saved;
+- HTTPS health: `Tier-0`, PostgreSQL, `gpt-5.6-sol/high`, nine datasets, and 1,976 indexed fact cards;
+- public production flow: four crops, six checkpoints, six citations, five evidence-backed stages, and all five Sol-selected inspection tools;
+- public URL: <https://rookiecoders.tech>;
+- the six pre-existing Droplet-only RAG commits remain preserved on `server-rag-backup-20260724T153137Z`.
+
 ## Truth boundaries
 
 - Crop base coefficients, production costs, yields, prices, and default checkpoint offsets remain team assumptions.
@@ -48,11 +57,8 @@ The live weather response is time-sensitive. A separate bounded server-side prob
 - Chemical pesticide advice is intentionally omitted without current DAE registry evidence.
 - This is Tier 0 only. Tier 1, Tier 2, bdapps payment, image diagnosis, marketplace, Bengali voice, and proactive alerts are deferred.
 
-## Remaining gates
+## Deferred after Tier 0
 
-1. Run the exact revision on DigitalOcean.
-2. Verify PostgreSQL persistence.
-3. Run one public health check and one complete Gazipur flow.
-4. Record deployed URL and SHA, then push the verified commit.
+Tier 1, Tier 2, bdapps payment, Bengali voice, image diagnosis, proactive alerts, and a deliberate merge of the preserved server-only RAG branch remain future work.
 
 See `evaluation.html` for the judge-facing self-test and `final plan.html` for the validated execution handoff.

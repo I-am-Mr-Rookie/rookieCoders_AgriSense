@@ -64,7 +64,9 @@ On 24 July 2026:
 - instruction-like retrieval text remained inert data;
 - unknown/repeated model tool calls were rejected and secret-shaped trace fields were redacted.
 
-The main local HTTP probe intentionally ran without secrets, so it exercised the labeled deterministic explanation and memory fallback. A separate transient server-side probe verified the live GPT-5.6 Sol tool loop without exposing the key. DigitalOcean and target PostgreSQL still require target-environment verification.
+The main local HTTP probe intentionally ran without secrets, so it exercised the labeled deterministic explanation and memory fallback. A separate transient server-side probe verified the live GPT-5.6 Sol tool loop without exposing the key.
+
+The DigitalOcean production deployment is verified at <https://rookiecoders.tech>: HTTPS health reports PostgreSQL, `gpt-5.6-sol/high`, nine datasets, and 1,976 fact cards. A complete Gazipur production flow returned four crops, six checkpoints, six citations, live Open-Meteo data, and all five model-selected evidence tools.
 
 ## Evidence artifacts
 
