@@ -3,7 +3,12 @@ export function canonicalizeEvidenceUrl(value) {
 
   try {
     const url = new URL(value.trim());
-    if (!url.hostname) return null;
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:")
+      || !url.hostname
+    ) {
+      return null;
+    }
 
     url.hostname = url.hostname.toLowerCase();
     url.hash = "";

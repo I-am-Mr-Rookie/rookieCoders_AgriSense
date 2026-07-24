@@ -16,7 +16,15 @@ export function createAgentRun({ id, mode = "live", startedAt }) {
   };
 }
 
+function isTerminalAgentRun(run) {
+  return run.status === "complete"
+    || run.status === "failed"
+    || run.status === "cancelled";
+}
+
 export function appendRunEvent(run, event) {
+  if (isTerminalAgentRun(run)) return run;
+
   const hasDuplicateId = event?.id != null
     && run.events.some((recorded) => recorded.id === event.id);
   if (hasDuplicateId) return run;
@@ -31,6 +39,8 @@ export function completeAgentRun(
   run,
   { answer, reasoningSummaries, completedAt },
 ) {
+  if (isTerminalAgentRun(run)) return run;
+
   const { error: _error, ...withoutError } = run;
   return {
     ...withoutError,
@@ -43,6 +53,8 @@ export function completeAgentRun(
 }
 
 export function failAgentRun(run, { error, completedAt }) {
+  if (isTerminalAgentRun(run)) return run;
+
   return {
     ...run,
     status: "failed",
@@ -54,6 +66,8 @@ export function failAgentRun(run, { error, completedAt }) {
 }
 
 export function cancelAgentRun(run, { completedAt }) {
+  if (isTerminalAgentRun(run)) return run;
+
   const { error: _error, ...withoutError } = run;
   return {
     ...withoutError,

@@ -19,6 +19,9 @@ test("canonicalizes evidence URLs without changing non-root paths", () => {
   );
   assert.equal(canonicalizeEvidenceUrl("not a URL"), null);
   assert.equal(canonicalizeEvidenceUrl(), null);
+  assert.equal(canonicalizeEvidenceUrl("javascript:alert(1)"), null);
+  assert.equal(canonicalizeEvidenceUrl("ftp://example.com/source"), null);
+  assert.equal(canonicalizeEvidenceUrl("ws://example.com/source"), null);
 });
 
 test("groups equivalent URLs in stable first-seen order and retains every record", () => {
@@ -90,4 +93,20 @@ test("retains URL-less records without IDs as separate first-seen groups", () =>
   assert.equal(groups.length, 2);
   assert.deepEqual(groups.map((group) => group.count), [1, 1]);
   assert.deepEqual(groups.flatMap((group) => group.records), records);
+});
+
+test("groups forbidden URL schemes by evidence ID", () => {
+  const records = [
+    { id: "unsafe-1", url: "ftp://example.com/source", title: "FTP record" },
+    { id: "unsafe-2", url: "ftp://example.com/source", title: "Second FTP record" },
+    { id: "unsafe-1", url: "javascript:alert(1)", title: "Script record" },
+  ];
+
+  const groups = groupEvidenceRecords(records);
+
+  assert.equal(groups.length, 2);
+  assert.equal(groups[0].canonicalUrl, null);
+  assert.deepEqual(groups[0].records, [records[0], records[2]]);
+  assert.equal(groups[1].canonicalUrl, null);
+  assert.deepEqual(groups[1].records, [records[1]]);
 });

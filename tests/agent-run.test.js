@@ -131,3 +131,78 @@ test("toggles run expansion without mutating the input run", () => {
   assert.equal(collapsed.collapsed, true);
   assert.equal(expanded.collapsed, false);
 });
+
+test("ignores late streamed events after every terminal status", () => {
+  const running = appendRunEvent(
+    createAgentRun({ id: "run-1", mode: "live", startedAt: 1_000 }),
+    { id: "activity-1", status: "completed", durationMs: 47 },
+  );
+  const terminalRuns = [
+    completeAgentRun(running, {
+      answer: "Done",
+      reasoningSummaries: [],
+      completedAt: 2_000,
+    }),
+    failAgentRun(running, {
+      error: "Weather unavailable",
+      completedAt: 2_000,
+    }),
+    cancelAgentRun(running, { completedAt: 2_000 }),
+  ];
+
+  for (const terminal of terminalRuns) {
+    const afterLateEvent = appendRunEvent(terminal, {
+      id: "activity-late",
+      status: "completed",
+      durationMs: 999,
+    });
+
+    assert.equal(afterLateEvent, terminal);
+    assert.deepEqual(
+      afterLateEvent.events.map((event) => event.id),
+      ["activity-1"],
+    );
+  }
+});
+
+test("preserves the first terminal transition", () => {
+  const running = createAgentRun({
+    id: "run-1",
+    mode: "live",
+    startedAt: 1_000,
+  });
+  const terminalRuns = [
+    completeAgentRun(running, {
+      answer: "First answer",
+      reasoningSummaries: ["First summary"],
+      completedAt: 2_000,
+    }),
+    failAgentRun(running, {
+      error: "First error",
+      completedAt: 2_100,
+    }),
+    cancelAgentRun(running, { completedAt: 2_200 }),
+  ];
+
+  for (const terminal of terminalRuns) {
+    assert.equal(
+      completeAgentRun(terminal, {
+        answer: "Replacement answer",
+        reasoningSummaries: ["Replacement summary"],
+        completedAt: 3_000,
+      }),
+      terminal,
+    );
+    assert.equal(
+      failAgentRun(terminal, {
+        error: "Replacement error",
+        completedAt: 3_100,
+      }),
+      terminal,
+    );
+    assert.equal(
+      cancelAgentRun(terminal, { completedAt: 3_200 }),
+      terminal,
+    );
+  }
+});
