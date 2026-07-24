@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AgriSense T0-Initial Plan</title>
+<style>
+:root{--bg:#0e1713;--panel:#17251e;--line:#3b5145;--text:#eef4ef;--muted:#a8b9ae;--accent:#f0ad43;--ok:#6ac98f}*{box-sizing:border-box}body{max-width:1100px;margin:auto;padding:28px 18px 60px;background:var(--bg);color:var(--text);font:15px/1.55 "Segoe UI",sans-serif}h1{font-size:28px}h2{color:var(--accent);margin-top:32px}.band,td,th,.score{background:var(--panel);border:1px solid var(--line);padding:10px}.band{border-left:4px solid var(--ok);padding:14px}table{width:100%;border-collapse:collapse}th,td{text-align:left;vertical-align:top}code,pre{background:#09100c;border-radius:5px}code{padding:2px 5px}pre{padding:14px;overflow:auto;white-space:pre-wrap}.muted{color:var(--muted)}.scores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.score{border-radius:9px}@media(max-width:700px){.scores{grid-template-columns:1fr}table{font-size:12px}}
+</style>
+</head>
+<body>
+<h1>AgriSense T0-Initial Plan</h1>
+<p class="muted">Mode: other-timeboxed | Generated 24 July 2026 | Handoff version 2</p>
+
+<h2>1. Authority And Frozen Constraints</h2>
+<div class="band">
+<p><strong>Authority:</strong> Koushik's latest instruction, the official final problem statement, executable evidence, then this plan.</p>
+<p><strong>Objective:</strong> Give judges a truthful first vertical prototype while preserving a clean path to Tier 0 Completion.</p>
+<p><strong>Frozen scope:</strong> React/Vite, Express/Node, Bangladesh Rabi, four crops, Open-Meteo, GPT-5.6 Sol/high, PostgreSQL, shallow coverage of all eight Tier 0 surfaces.</p>
+<p><strong>Non-goals:</strong> Tier 1, Tier 2, bdapps, full agronomic validation, full vector RAG, and submission-ready claims.</p>
+<p><strong>Deadline:</strong> 25 July 2026 09:00 Asia/Dhaka. Stop new implementation at 08:30.</p>
+</div>
+
+<h2>2. Approved Strategy</h2>
+<div class="band">
+<p><strong>Direction:</strong> Bounded hybrid. Sol interprets/explains; deterministic modules own validation, weather coupling, ranking, calendar and finance.</p>
+<p><strong>Demo:</strong> Standard blank conversation plus a removable seeded Gazipur preview.</p>
+<p><strong>Owners:</strong> Koushik — scope/agent behavior; Kawsar — PostgreSQL/DigitalOcean; Tonmoy — regression/demo.</p>
+<p><strong>Optional Hyperagent checks:</strong> Control Tower for coverage, Research &amp; Recon for bounded source collection, Build &amp; Debug for independent review, Independent Judge for a cold rubric pass, Submission &amp; Release for README/release truth. None is a runtime dependency.</p>
+</div>
+
+<h2>3. Evidence And Candidate Ledger</h2>
+<table>
+<tr><th>ID</th><th>Rule / requirement</th><th>Observable claim</th><th>State</th><th>Evidence</th><th>Priority</th></tr>
+<tr><td>L-01</td><td>Working prototype</td><td>The repository initially contained no implementation.</td><td>CONFIRMED</td><td>Remote repository returned isEmpty=true.</td><td>Critical</td></tr>
+<tr><td>L-02</td><td>Tier 0 contract</td><td>The initial prototype must touch all eight required capabilities.</td><td>CONFIRMED</td><td>Official PDF plus Koushik's explicit approval.</td><td>Critical</td></tr>
+<tr><td>L-03</td><td>Truthful status</td><td>T0-Initial equals completed Tier 0.</td><td>FALSE_POSITIVE</td><td>README records incomplete RAG, agronomy, agent loop and target deployment evidence.</td><td>Never claim</td></tr>
+</table>
+<p class="muted">Candidate count: 3 | Unique confirmed gaps: 2 | Unresolved: target OpenAI, PostgreSQL and DigitalOcean execution</p>
+
+<h2>4. Dependency-Aware Execution Plan</h2>
+<table>
+<tr><th>Step</th><th>Timebox</th><th>Owner</th><th>Dependencies</th><th>Action</th><th>Acceptance evidence</th><th>Fallback</th></tr>
+<tr><td>S1 — Verify revision</td><td>10 min</td><td>Kawsar</td><td>None</td><td>Pull main, install, test and build.</td><td>E3: tests and build pass on deployed revision.</td><td>Use verified local revision.</td></tr>
+<tr><td>S2 — Deploy</td><td>10 min</td><td>Kawsar</td><td>S1</td><td>Set environment, start PM2 and route HTTPS.</td><td>E4: public health reports PostgreSQL and gpt-5.6-sol/high.</td><td>Run local deterministic demo.</td></tr>
+<tr><td>S3 — Judge-path smoke</td><td>10 min</td><td>Tonmoy</td><td>S2</td><td>Run blank intake and seeded plan; inspect trace and truth labels.</td><td>E4: public flow produces weather, crops, finance, calendar, citations and trace.</td><td>Record blocker and show the last verified path.</td></tr>
+</table>
+
+<h2>5. Deadline Modes And Scope Cuts</h2>
+<table>
+<tr><th>Mode</th><th>Trigger</th><th>Allowed work</th><th>Work dropped</th><th>Owner</th></tr>
+<tr><td>Normal</td><td>After judge preview</td><td>Tier 0 Completion</td><td>None</td><td>Koushik</td></tr>
+<tr><td>Compression</td><td>Judge arrival or failed deploy</td><td>Demo-critical fixes only</td><td>Optional polish and new features</td><td>Koushik</td></tr>
+<tr><td>Freeze</td><td>25 July 07:30</td><td>Regression, README and demo</td><td>All new behavior</td><td>Tonmoy</td></tr>
+<tr><td>Submission</td><td>25 July 08:30</td><td>Final push, readback and link submission</td><td>All implementation</td><td>Koushik</td></tr>
+</table>
+
+<h2>6. Validation Matrix</h2>
+<table>
+<tr><th>Requirement</th><th>Probe</th><th>Expected result</th><th>Evidence level</th><th>Regression set</th></tr>
+<tr><td>Core behavior</td><td><code>npm test</code></td><td>Six tests pass.</td><td>E3</td><td>Intake, weather coupling, finance, calendar, retrieval, trace</td></tr>
+<tr><td>Production bundle</td><td><code>npm run build</code></td><td>Vite exits zero.</td><td>E2</td><td>React bundle</td></tr>
+<tr><td>Judge flow</td><td><code>POST /api/session/message</code></td><td>Four crops, six stages, three citations and trace.</td><td>E2 local / E4 public</td><td>Health plus seeded plan</td></tr>
+</table>
+
+<h2>7. Risks, Fallbacks, And Recovery State</h2>
+<table>
+<tr><th>Risk</th><th>Trigger</th><th>Response</th><th>Recovery record</th></tr>
+<tr><td>OpenAI unavailable</td><td>Missing key or API failure</td><td>Use labeled deterministic explanation.</td><td>Health endpoint exposes model mode.</td></tr>
+<tr><td>PostgreSQL unavailable</td><td>Connection failure</td><td>Use in-memory local demo; do not claim persistence.</td><td>Health endpoint exposes database mode.</td></tr>
+<tr><td>Weather unavailable</td><td>Timeout or error</td><td>Return recoverable error; never invent a forecast.</td><td>HTTP response and server log.</td></tr>
+</table>
+
+<h2>8. Submission Checklist</h2>
+<ul>
+<li>Public repository source and README match the running revision.</li>
+<li>Health endpoint and seeded plan pass on DigitalOcean.</li>
+<li>README states the tier and real/generated status of every feature.</li>
+<li>The four-minute demo is rehearsed against the public URL and local fallback.</li>
+<li>Final commit is pushed before 09:00 and the repository link is submitted.</li>
+</ul>
+
+<h2>9. Executor Handoff</h2>
+<div class="band"><p>Deploy and verify the pushed main revision. Preserve the T0-Initial label and never convert fallback evidence into OpenAI/PostgreSQL success claims.</p></div>
+<pre>Role stack:
+Primary: Tier 0 Initial Implementation and Delivery Lead.
+Platform: React/Vite, Express/Node, DigitalOcean and PostgreSQL Engineer.
+Validation: Contract, Demo and Release Auditor.
+
+In a step-by-step logical process, pull main, set server-only environment values, run npm ci and npm run check, build, restart PM2, verify public /api/health, run the seeded plan, inspect weather/crops/calendar/finance/citations/trace, and record the public revision and remaining Tier 0 Completion gaps.</pre>
+
+<script id="executor-handoff" type="application/json">
+{
+  "handoff_version": 2,
+  "mode": "other-timeboxed",
+  "objective": "Deploy and verify the pushed AgriSense T0-Initial vertical slice without claiming full Tier 0 completion.",
+  "authority_sources": ["Final/Agentic_AI_Hackathon_Final_Question.pdf", "README.md", "Koushik's 24 July 2026 decisions"],
+  "time_budget_minutes": 30,
+  "deadline": {"hard": "2026-07-25T09:00:00+06:00", "stop_work": "2026-07-25T08:30:00+06:00", "timezone": "Asia/Dhaka"},
+  "constraints": ["Preserve T0-Initial truth labels.", "Use GPT-5.6 Sol with high reasoning when configured.", "Do not begin Tier 1 or Tier 2."],
+  "steps": [
+    {"id": "S1", "title": "Run target-environment checks", "priority": "critical", "timebox_minutes": 10, "owner": "Kawsar", "dependencies": [], "acceptance": ["npm ci, tests and build pass on the deployment revision."], "evidence_required": "E3", "fallback": "Use the verified local revision for the immediate demo."},
+    {"id": "S2", "title": "Deploy on DigitalOcean", "priority": "critical", "timebox_minutes": 10, "owner": "Kawsar", "dependencies": ["S1"], "acceptance": ["Public health reports PostgreSQL and gpt-5.6-sol/high."], "evidence_required": "E4", "fallback": "Run the local demo and record the deployment blocker."},
+    {"id": "S3", "title": "Verify judge path and recovery state", "priority": "high", "timebox_minutes": 10, "owner": "Tonmoy", "dependencies": ["S2"], "acceptance": ["Blank intake and seeded demo complete; revision and limitations are recorded."], "evidence_required": "E4", "fallback": "Use the deterministic local demo and state unavailable integrations."}
+  ],
+  "validation_gates": ["npm test", "npm run build", "public health", "seeded public plan", "remote SHA readback"],
+  "git_policy": {"commit": "One verified T0-Initial bootstrap commit, then verified fixes only", "push": "Push authorized by Koushik to the public main branch"},
+  "score_claims": {"plan_quality": 94, "evidence_coverage": 72, "execution_readiness": null, "submission_ready": false}
+}
+</script>
+
+<h2>10. Scorecard And Claim Boundaries</h2>
+<div class="scores"><div class="score"><strong>Plan Quality</strong><br>94/100</div><div class="score"><strong>Evidence Coverage</strong><br>72/100</div><div class="score"><strong>Execution Readiness</strong><br>Not evaluated</div></div>
+<table>
+<tr><th>Criterion</th><th>Weight</th><th>Points</th><th>Evidence</th></tr>
+<tr><td>Official alignment</td><td>25</td><td>24</td><td>All eight surfaces and limitations represented.</td></tr>
+<tr><td>Feasibility</td><td>20</td><td>19</td><td>Thirty-minute rescue scope with fallback.</td></tr>
+<tr><td>Prioritization</td><td>15</td><td>15</td><td>No work outside T0-Initial.</td></tr>
+<tr><td>Validation</td><td>15</td><td>13</td><td>Local gates exist; target E4 remains pending.</td></tr>
+<tr><td>Ownership</td><td>10</td><td>9</td><td>Build, deployment and QA owners named.</td></tr>
+<tr><td>Risk and cuts</td><td>10</td><td>10</td><td>Explicit fallbacks and deadline modes.</td></tr>
+<tr><td>Submission operations</td><td>5</td><td>4</td><td>Remote and cutoff gates exist; event channel is pending.</td></tr>
+<tr><th>Total</th><th>100</th><th>94</th><th>Planning score only</th></tr>
+</table>
+<p class="muted">Score trajectory: one evidence-led pass | Iterations: 1/5 | Submission-ready claim: false</p>
+</body>
+</html>
