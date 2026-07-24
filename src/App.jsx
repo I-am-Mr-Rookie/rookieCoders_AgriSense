@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 
 import { assistantText } from "../shared/assistant.js";
+import { createFreshDemoState, createInitialConversation, createSessionId } from "./session.js";
 
 const DEMO_PROFILE = {
   location: "Gazipur",
@@ -16,22 +17,45 @@ function Money({ value }) {
 }
 
 export default function App() {
-  const [sessionId] = useState(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState(() => createSessionId());
   const [message, setMessage] = useState("");
-  const [conversation, setConversation] = useState([{ role: "agent", text: "Tell me about your farm. I will ask only for missing details." }]);
+  const [conversation, setConversation] = useState(createInitialConversation);
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const best = useMemo(() => result?.crops?.[0], [result]);
+  const status = busy
+    ? {
+        title: "Request in progress",
+        detail: result
+          ? "The previous plan remains visible until this request completes."
+          : "No result is available until this request completes.",
+      }
+    : error
+      ? {
+          title: "Request failed",
+          detail: result
+            ? "The previous plan remains visible."
+            : "No plan was generated.",
+        }
+      : result
+        ? {
+            title: "Plan generated",
+            detail: result.weather?.source || "Weather source unavailable",
+          }
+        : {
+            title: "Not started",
+            detail: "No live data has been requested yet.",
+          };
 
-  async function send(payload) {
+  async function send(payload, requestSessionId = sessionId) {
     setBusy(true);
     setError("");
     try {
       const response = await fetch("/api/session/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, ...payload }),
+        body: JSON.stringify({ ...payload, sessionId: requestSessionId }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Request failed");
@@ -51,16 +75,26 @@ export default function App() {
     if (message.trim()) send({ message: message.trim() });
   }
 
+  function runDemo() {
+    const fresh = createFreshDemoState();
+    setSessionId(fresh.sessionId);
+    setMessage(fresh.message);
+    setConversation(fresh.conversation);
+    setResult(fresh.result);
+    setError(fresh.error);
+    void send({ profilePatch: DEMO_PROFILE }, fresh.sessionId);
+  }
+
   return (
-    <main>
+    <main aria-busy={busy}>
       <header>
         <div><span className="eyebrow">Rookie Coders · Tier 0</span><h1>AgriSense</h1></div>
-        <button className="demo" disabled={busy} onClick={() => send({ profilePatch: DEMO_PROFILE })}>Run Gazipur demo</button>
+        <button type="button" className="demo" disabled={busy} onClick={runDemo}>Start fresh Gazipur demo</button>
       </header>
 
       <section className="hero">
         <div><h2>A grounded season plan, not a generic chatbot.</h2><p>Live Bangladesh weather, cited knowledge, deterministic economics, persistent farm context, and an inspectable tool trace.</p></div>
-        <div className="status"><b>{result ? "Plan generated" : "Waiting for farm context"}</b><span>{result?.weather?.source || "Open-Meteo ready"}</span></div>
+        <div className="status" role="status" aria-live="polite" aria-atomic="true"><b>{status.title}</b><span>{status.detail}</span></div>
       </section>
 
       <div className="layout">
@@ -69,14 +103,28 @@ export default function App() {
           <div className="messages">
             {conversation.map((item, index) => <p key={index} className={item.role}><b>{item.role === "agent" ? "AgriSense" : "Farmer"}</b>{item.text}</p>)}
           </div>
-          <form onSubmit={submit}><input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Example: I have 1 acre in Gazipur..." /><button disabled={busy}>{busy ? "Working…" : "Send"}</button></form>
-          {error && <p className="error">{error}</p>}
+          <form onSubmit={submit} aria-label="Farm context message">
+            <label className="sr-only" htmlFor="farm-message">Describe your farm</label>
+            <input
+              id="farm-message"
+              name="farmMessage"
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder="Example: I have 1 acre in Gazipur..."
+              disabled={busy}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "request-error" : undefined}
+            />
+            <button type="submit" disabled={busy || !message.trim()}>{busy ? "Working..." : "Send"}</button>
+          </form>
+          {error && <p id="request-error" className="error" role="alert">{error}</p>}
         </section>
 
         <section className="panel summary">
           <h3>Recommendation</h3>
           {!best ? <p className="muted">Complete the intake or run the demo.</p> : <>
             <div className="best"><span>Best fit</span><strong>{best.name}</strong><em>{best.suitability}% suitability · {best.riskLevel} risk</em></div>
+            <p className="assumption-label"><b>Financial basis:</b> Team assumption - planning estimate, not live market data or retrieved evidence.</p>
             <dl><div><dt>7-day rain</dt><dd>{result.weather.precipitationMm.toFixed(1)} mm</dd></div><div><dt>Mean temperature</dt><dd>{result.weather.meanTemperatureC.toFixed(1)}°C</dd></div><div><dt>BARC zoning score</dt><dd>{best.scoreComponents.ragSuitability ?? "Unavailable"}</dd></div><div><dt>Itemized cost</dt><dd><ul>{Object.entries(best.financials.costBreakdownBdt).map(([name, value]) => <li key={name}>{name}: <Money value={value} /></li>)}</ul></dd></div><div><dt>Total cost</dt><dd><Money value={best.financials.totalCostBdt} /></dd></div><div><dt>Expected yield</dt><dd>{best.financials.expectedYieldKg.toFixed(0)} kg at <Money value={best.financials.pricePerKgBdt} /> per kg</dd></div><div><dt>Expected revenue</dt><dd><Money value={best.financials.revenueBdt} /></dd></div><div><dt>Net profit</dt><dd><Money value={best.financials.netProfitBdt} /></dd></div><div><dt>ROI</dt><dd>{best.financials.roiPercent}%</dd></div><div><dt>Break-even yield</dt><dd>{best.financials.breakEvenYieldKg.toFixed(0)} kg</dd></div></dl>
           </>}
         </section>
