@@ -63,6 +63,45 @@ test("crop ranking exposes and uses RAG suitability evidence", () => {
   assert.equal(mustard.sources[0].id, "barc-mustard");
 });
 
+test("every ranked crop explains its inputs, evidence, penalties, and assumption boundary", () => {
+  const profile = {
+    location: "Gazipur",
+    farmSizeAcres: 2.5,
+    soilType: "loam",
+    waterAvailability: "limited",
+    budgetBdt: 50000,
+    targetSeason: "Rabi",
+  };
+  const weather = { meanTemperatureC: 22, precipitationMm: 25 };
+  const evidenceByCrop = {
+    mustard: { suitabilityScore: 95, sources: [{ id: "barc-mustard" }] },
+    potato: { suitabilityScore: 10, sources: [{ id: "barc-potato" }] },
+  };
+
+  const crops = rankCrops(profile, weather, evidenceByCrop);
+
+  assert.equal(crops.length, 4);
+  assert.deepEqual(
+    crops.map(({ id, suitability, roughProfitBdt }) => ({ id, suitability, roughProfitBdt })),
+    [
+      { id: "mustard", suitability: 86, roughProfitBdt: 75000 },
+      { id: "maize", suitability: 65, roughProfitBdt: 87500 },
+      { id: "potato", suitability: 54, roughProfitBdt: 275000 },
+      { id: "boro-rice", suitability: 25, roughProfitBdt: 30000 },
+    ],
+  );
+  for (const crop of crops) {
+    assert.deepEqual(crop.rationale.profileSnapshot, profile);
+    assert.deepEqual(crop.rationale.liveWeather, weather);
+    assert.equal(crop.rationale.rag.suitabilityScore, crop.scoreComponents.ragSuitability);
+    assert.deepEqual(crop.rationale.rag.sourceIds, crop.sources.map((source) => source.id));
+    assert.equal(crop.rationale.penalties.waterPenalty, crop.scoreComponents.waterPenalty);
+    assert.equal(crop.rationale.penalties.budgetPenalty, crop.scoreComponents.budgetPenalty);
+    assert.match(crop.rationale.assumptionBoundary, /^TEAM_ASSUMPTION:/);
+    assert.match(crop.rationale.assumptionBoundary, /duration.*yield.*price.*base cost.*financial cost shares/i);
+  }
+});
+
 test("financial projection scales every value with farm size", () => {
   const oneAcre = calculateFinancials({
     farmSizeAcres: 1,

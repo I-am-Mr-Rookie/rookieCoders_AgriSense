@@ -120,6 +120,29 @@ export function rankCrops(profile, weather, evidenceByCrop = {}) {
         ragSuitability,
       },
       sources: evidence.sources ?? [],
+      rationale: {
+        profileSnapshot: {
+          location: profile.location,
+          farmSizeAcres: profile.farmSizeAcres,
+          soilType: profile.soilType,
+          waterAvailability: profile.waterAvailability,
+          budgetBdt: profile.budgetBdt,
+          targetSeason: profile.targetSeason,
+        },
+        liveWeather: {
+          precipitationMm: weather.precipitationMm,
+          meanTemperatureC: weather.meanTemperatureC,
+        },
+        rag: {
+          suitabilityScore: ragSuitability,
+          sourceIds: (evidence.sources ?? []).map((item) => item.id),
+        },
+        penalties: {
+          waterPenalty,
+          budgetPenalty,
+        },
+        assumptionBoundary: "TEAM_ASSUMPTION: duration, yield, price, base cost, and financial cost shares are planning assumptions; live weather and retrieved RAG values are not.",
+      },
     };
   }).sort((a, b) => b.suitability - a.suitability || b.roughProfitBdt - a.roughProfitBdt);
 }

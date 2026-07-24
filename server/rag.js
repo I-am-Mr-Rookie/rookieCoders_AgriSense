@@ -18,8 +18,14 @@ const DATASETS = [
 
 let cached;
 
+const STOP_WORDS = new Set([
+  "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "is",
+  "it", "of", "on", "or", "that", "the", "then", "to", "was", "were", "with",
+]);
+
 function tokens(value) {
-  return String(value ?? "").toLowerCase().match(/[a-z0-9]+/g) ?? [];
+  return (String(value ?? "").toLowerCase().match(/[a-z0-9]+/g) ?? [])
+    .filter((token) => !STOP_WORDS.has(token));
 }
 
 function cropKey(value) {
@@ -96,6 +102,7 @@ export function retrieveFacts(query, { crop, dataset, geo, topK = 5 } = {}) {
       const score = [...queryTokens].reduce((sum, token) => sum + (documentTokens.has(token) ? 1 : 0), 0);
       return { ...doc, score };
     })
+    .filter((doc) => queryTokens.size === 0 || doc.score > 0)
     .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
     .slice(0, Math.max(1, Math.min(Number(topK) || 5, 20)));
   return { query, results, report: loadCorpus().report };
