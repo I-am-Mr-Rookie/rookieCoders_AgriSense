@@ -9,85 +9,100 @@ const ALLOWED_FIELDS = new Set([
 
 const SOIL_TYPES = new Set(["loam", "sandy loam", "clay loam", "clay", "sandy"]);
 const WATER_AVAILABILITY = new Set(["irrigated", "limited", "rainfed"]);
-const BANGLADESH_DISTRICTS = new Set([
-  "bagerhat",
-  "bandarban",
-  "barguna",
-  "barishal",
-  "bhola",
-  "bogura",
-  "brahmanbaria",
-  "chandpur",
-  "chapainawabganj",
-  "chattogram",
-  "chuadanga",
-  "cox's bazar",
-  "cumilla",
-  "dhaka",
-  "dinajpur",
-  "faridpur",
-  "feni",
-  "gaibandha",
-  "gazipur",
-  "gopalganj",
-  "habiganj",
-  "jamalpur",
-  "jashore",
-  "jhalokati",
-  "jhenaidah",
-  "joypurhat",
-  "khagrachhari",
-  "khulna",
-  "kishoreganj",
-  "kurigram",
-  "kushtia",
-  "lakshmipur",
-  "lalmonirhat",
-  "madaripur",
-  "magura",
-  "manikganj",
-  "meherpur",
-  "moulvibazar",
-  "munshiganj",
-  "mymensingh",
-  "naogaon",
-  "narail",
-  "narayanganj",
-  "narsingdi",
-  "natore",
-  "netrokona",
-  "nilphamari",
-  "noakhali",
-  "pabna",
-  "panchagarh",
-  "patuakhali",
-  "pirojpur",
-  "rajbari",
-  "rajshahi",
-  "rangamati",
-  "rangpur",
-  "satkhira",
-  "shariatpur",
-  "sherpur",
-  "sirajganj",
-  "sunamganj",
-  "sylhet",
-  "tangail",
-  "thakurgaon",
-  // Common English aliases and former spellings.
-  "barisal",
-  "bogra",
-  "chapai nawabganj",
-  "chittagong",
-  "coxs bazar",
-  "comilla",
-  "jessore",
-  "jhalakathi",
-  "khagrachari",
-  "maulvibazar",
-  "moulavi bazar",
+const DISTRICT_NAMES = [
+  "Bagerhat",
+  "Bandarban",
+  "Barguna",
+  "Barishal",
+  "Bhola",
+  "Bogura",
+  "Brahmanbaria",
+  "Chandpur",
+  "Chapainawabganj",
+  "Chattogram",
+  "Chuadanga",
+  "Cox's Bazar",
+  "Cumilla",
+  "Dhaka",
+  "Dinajpur",
+  "Faridpur",
+  "Feni",
+  "Gaibandha",
+  "Gazipur",
+  "Gopalganj",
+  "Habiganj",
+  "Jamalpur",
+  "Jashore",
+  "Jhalokati",
+  "Jhenaidah",
+  "Joypurhat",
+  "Khagrachhari",
+  "Khulna",
+  "Kishoreganj",
+  "Kurigram",
+  "Kushtia",
+  "Lakshmipur",
+  "Lalmonirhat",
+  "Madaripur",
+  "Magura",
+  "Manikganj",
+  "Meherpur",
+  "Moulvibazar",
+  "Munshiganj",
+  "Mymensingh",
+  "Naogaon",
+  "Narail",
+  "Narayanganj",
+  "Narsingdi",
+  "Natore",
+  "Netrokona",
+  "Nilphamari",
+  "Noakhali",
+  "Pabna",
+  "Panchagarh",
+  "Patuakhali",
+  "Pirojpur",
+  "Rajbari",
+  "Rajshahi",
+  "Rangamati",
+  "Rangpur",
+  "Satkhira",
+  "Shariatpur",
+  "Sherpur",
+  "Sirajganj",
+  "Sunamganj",
+  "Sylhet",
+  "Tangail",
+  "Thakurgaon",
+];
+const DISTRICT_BY_NAME = new Map(
+  DISTRICT_NAMES.map((district) => [district.toLowerCase(), district]),
+);
+const DISTRICT_ALIASES = new Map([
+  ["barisal", "Barishal"],
+  ["bogra", "Bogura"],
+  ["chapai nawabganj", "Chapainawabganj"],
+  ["chittagong", "Chattogram"],
+  ["coxs bazar", "Cox's Bazar"],
+  ["comilla", "Cumilla"],
+  ["jessore", "Jashore"],
+  ["jhalakathi", "Jhalokati"],
+  ["khagrachari", "Khagrachhari"],
+  ["maulvibazar", "Moulvibazar"],
+  ["moulavi bazar", "Moulvibazar"],
 ]);
-const SAFE_LOCATION_COMPONENT = /^[\p{L}\p{M}][\p{L}\p{M} .()'’-]*$/u;
+const DIVISIONS = new Set([
+  "Barishal",
+  "Chattogram",
+  "Dhaka",
+  "Khulna",
+  "Mymensingh",
+  "Rajshahi",
+  "Rangpur",
+  "Sylhet",
+]);
+const SAFE_LOCATION_COMPONENT = /^[\p{L}\p{M}][\p{L}\p{M} .()'\u2019-]*$/u;
+const DECIMAL_NUMBER = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
 
 export class ValidationError extends Error {
   constructor(message) {
@@ -103,7 +118,11 @@ function normalizeNumber(value, field, maximum) {
   ) {
     throw new ValidationError(`${field} must be a finite number.`);
   }
-  const normalized = Number(value);
+  const text = typeof value === "string" ? value.trim() : null;
+  if (text !== null && !DECIMAL_NUMBER.test(text)) {
+    throw new ValidationError(`${field} must be an ordinary decimal number.`);
+  }
+  const normalized = text === null ? value : Number(text);
   if (!Number.isFinite(normalized) || normalized <= 0 || normalized > maximum) {
     throw new ValidationError(`${field} must be greater than 0 and at most ${maximum}.`);
   }
@@ -114,28 +133,67 @@ function normalizeLocationComponent(value) {
   return value
     .trim()
     .toLowerCase()
-    .replace(/[’‘`]/g, "'")
+    .replace(/[\u2018\u2019`]/g, "'")
     .replace(/\s+/g, " ");
 }
 
-function districtNameFromComponent(value) {
-  return normalizeLocationComponent(value)
-    .replace(/\s+(?:sadar\s+upazila|district|division|upazila)$/, "");
+function canonicalDistrict(value) {
+  const normalized = normalizeLocationComponent(value);
+  return DISTRICT_BY_NAME.get(normalized) ?? DISTRICT_ALIASES.get(normalized) ?? null;
 }
 
-function isBangladeshLocation(location) {
-  const withoutCountry = location.replace(/,\s*bangladesh\s*$/i, "").trim();
-  const components = withoutCountry.split(",").map((component) => component.trim());
+function districtComponent(value, requireSuffix = false) {
+  const normalized = normalizeLocationComponent(value);
+  const match = normalized.match(/^(.+)\s+district$/);
+  if (match) return canonicalDistrict(match[1]);
+  return requireSuffix ? null : canonicalDistrict(normalized);
+}
+
+function divisionComponent(value) {
+  const normalized = normalizeLocationComponent(value);
+  const match = normalized.match(/^(.+)\s+division$/);
+  if (!match) return null;
+  const division = canonicalDistrict(match[1]);
+  return DIVISIONS.has(division) ? division : null;
+}
+
+function isUpazilaComponent(value) {
+  return /^.+\s+upazila$/i.test(value.trim());
+}
+
+export function districtFromLocation(location) {
+  if (typeof location !== "string" || !location.trim()) return null;
+  const components = location.split(",").map((component) => component.trim());
   if (
     components.length === 0
     || components.length > 3
     || components.some((component) => !SAFE_LOCATION_COMPONENT.test(component))
   ) {
-    return false;
+    return null;
   }
 
-  const districtComponent = components.at(-1);
-  return BANGLADESH_DISTRICTS.has(districtNameFromComponent(districtComponent));
+  if (normalizeLocationComponent(components.at(-1)) === "bangladesh") {
+    components.pop();
+  }
+  if (
+    components.length === 0
+    || components.length > 2
+    || components.some((component) => normalizeLocationComponent(component) === "bangladesh")
+  ) {
+    return null;
+  }
+
+  if (components.length === 1) {
+    return districtComponent(components[0]) ?? divisionComponent(components[0]);
+  }
+
+  if (isUpazilaComponent(components[0])) {
+    return districtComponent(components[1]);
+  }
+
+  const district = districtComponent(components[0], true);
+  const division = divisionComponent(components[1]);
+  return district && division ? district : null;
 }
 
 function normalizeChoice(value, field, supportedValues) {
@@ -166,7 +224,7 @@ export function validateProfilePatch(patch) {
       throw new ValidationError("location must be a non-empty Bangladesh location.");
     }
     const location = patch.location.trim();
-    if (!isBangladeshLocation(location)) {
+    if (!districtFromLocation(location)) {
       throw new ValidationError("location must be in Bangladesh.");
     }
     normalized.location = location;

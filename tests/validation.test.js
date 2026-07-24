@@ -48,6 +48,22 @@ test("accepts Bangladesh district and common district-style locations", () => {
   }
 });
 
+test("extracts the canonical district from every supported location form", async () => {
+  const { districtFromLocation } = await import("../server/validation.js");
+  const cases = new Map([
+    ["Gazipur", "Gazipur"],
+    ["Dhaka, Bangladesh", "Dhaka"],
+    ["Chittagong District, Bangladesh", "Chattogram"],
+    ["Mymensingh Division", "Mymensingh"],
+    ["Sreepur Upazila, Gazipur, Bangladesh", "Gazipur"],
+    ["Gazipur District, Dhaka Division, Bangladesh", "Gazipur"],
+  ]);
+
+  for (const [location, district] of cases) {
+    assert.equal(districtFromLocation(location), district, location);
+  }
+});
+
 test("rejects unknown profile fields", () => {
   assert.throws(
     () => validateProfilePatch({ location: "Gazipur", ownerName: "Internal only" }),
@@ -75,6 +91,16 @@ test("rejects obvious non-Bangladesh and unknown locations", () => {
     "Kathmandu, Nepal",
     "New York",
     "Unknown Farm Region",
+  ]) {
+    assert.throws(() => validateProfilePatch({ location }), ValidationError, location);
+  }
+});
+
+test("rejects free-form locality prefixes before Bangladesh district anchors", () => {
+  for (const location of [
+    "Tokyo, Dhaka, Bangladesh",
+    "Paris, Chattogram",
+    "New York, Gazipur District, Bangladesh",
   ]) {
     assert.throws(() => validateProfilePatch({ location }), ValidationError, location);
   }
@@ -109,6 +135,18 @@ test("rejects coercible non-numeric farm-size and budget input types", () => {
         () => validateProfilePatch({ [field]: value }),
         ValidationError,
         `${field}: ${JSON.stringify(value)}`,
+      );
+    }
+  }
+});
+
+test("rejects non-decimal numeric strings", () => {
+  for (const field of ["farmSizeAcres", "budgetBdt"]) {
+    for (const value of ["0x10", "0b10", "Infinity", "1e3"]) {
+      assert.throws(
+        () => validateProfilePatch({ [field]: value }),
+        ValidationError,
+        `${field}: ${value}`,
       );
     }
   }

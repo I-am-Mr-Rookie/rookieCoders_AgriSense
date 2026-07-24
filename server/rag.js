@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { districtFromLocation } from "./validation.js";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "data", "structured");
 const DATASETS = [
@@ -114,7 +115,7 @@ function source(doc) {
 }
 
 export function getCropEvidence(profile, cropId) {
-  const district = String(profile.location ?? "").split(",")[0].trim();
+  const district = districtFromLocation(profile.location) ?? "__unknown_district__";
   const result = retrieveFacts(`${cropId} suitability ${district}`, {
     crop: cropId,
     dataset: "crop_suitability",

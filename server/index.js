@@ -8,7 +8,8 @@ import { buildSeasonPlan, createTraceEntry, getMissingFields, rankCrops } from "
 import { databaseMode, initializeDatabase, loadSession, saveSession } from "./db.js";
 import { explainRecommendation, extractProfilePatch, openAiMode } from "./openai.js";
 import { getCropEvidence, getPlanEvidence, loadCorpus, retrieveFacts } from "./rag.js";
-import { publicFailure, ValidationError, validateProfilePatch } from "./validation.js";
+import { createPersistenceGuard, summarizeError } from "./recovery.js";
+import { ValidationError, validateProfilePatch } from "./validation.js";
 import { getWeather } from "./weather.js";
 
 const app = express();
@@ -38,14 +39,15 @@ const FIELD_LABELS = {
 
 app.post("/api/session/message", async (req, res) => {
   const started = Date.now();
-  const sessionId = String(req.body.sessionId || crypto.randomUUID());
+  const persistence = createPersistenceGuard(saveSession);
   try {
+    const sessionId = String(req.body.sessionId || crypto.randomUUID());
     const session = await loadSession(sessionId);
     const patch = validateProfilePatch(
       req.body.profilePatch ?? await extractProfilePatch(String(req.body.message || ""), session.profile),
     );
     session.profile = { ...session.profile, ...patch };
-    await saveSession(session);
+    await persistence.saveMergedProfile(session);
     const missingFields = getMissingFields(session.profile);
     if (missingFields.length) {
       return res.json({
@@ -101,8 +103,8 @@ app.post("/api/session/message", async (req, res) => {
       return res.status(400).json({ error: error.message, phase: "Tier-0", recoverable: true });
     }
     const errorId = crypto.randomUUID();
-    console.error(`AgriSense Tier-0 request failed (${errorId})`, error);
-    return res.status(502).json(publicFailure(errorId));
+    console.error(`AgriSense Tier-0 request failed (${errorId})`, summarizeError(error));
+    return res.status(502).json(persistence.failurePayload(errorId));
   }
 });
 
@@ -112,6 +114,6 @@ app.get("*path", (_req, res) => res.sendFile(path.join(dist, "index.html")));
 initializeDatabase()
   .then((mode) => app.listen(port, () => console.log(`AgriSense Tier-0 listening on :${port} (${mode})`)))
   .catch((error) => {
-    console.error("Database initialization failed", error);
+    console.error("Database initialization failed", summarizeError(error));
     process.exitCode = 1;
   });
