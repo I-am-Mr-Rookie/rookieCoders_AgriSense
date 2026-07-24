@@ -1,44 +1,77 @@
-# Rookie Coders — AgriSense
+# Rookie Coders — AgriSense Tier 0
 
-`T0-Initial` is the first deployable vertical prototype for the IUT 12th ICT Fest Bdapps Agentic AI Hackathon. It is intentionally shallow and is **not** the completed Tier 0 submission.
+AgriSense is an evidence-backed Bangladesh farm-planning agent for the IUT 12th ICT Fest Bdapps Agentic AI Hackathon.
 
-## Current capability truth
+## What is implemented
 
-| Capability | Tier | Current truth |
-|---|---|---|
-| Conversational intake | T0-Initial | GPT-5.6 Sol extracts supplied farm fields; the server asks only for remaining fields. The seeded demo bypasses extraction for a rapid preview. |
-| Live weather | T0-Initial | Real Open-Meteo geocoding and seven-day forecast for Bangladesh; returned rainfall and temperature feed crop scores. |
-| Crop recommendation | T0-Initial | Four Rabi candidates ranked deterministically using farm, weather, budget and water inputs. Coefficients are provisional demo assumptions. |
-| Season plan | T0-Initial | Dated land preparation, sowing, fertilizer, irrigation, weed/pest and harvest checkpoints. Dates require full validation. |
-| Financial projection | T0-Initial | Itemized costs, yield, revenue, profit, ROI and break-even calculated in code and scaled with farm size. Prices/yields are seeded assumptions. |
-| Explained reasoning | T0-Initial | GPT-5.6 Sol/high uses supplied evidence when `OPENAI_API_KEY` exists; otherwise a deterministic fallback is labeled. |
-| Knowledge retrieval | T0-Initial | Keyword retriever returns cited BARC, BRRI, FAO and Open-Meteo source cards. This is not the completed RAG corpus. |
-| Visible trace | T0-Initial | UI exposes operations, parameters, returned values, timestamps and durations. |
-| Memory | T0-Initial | PostgreSQL persistence with `DATABASE_URL`; in-memory fallback for local development. |
+- targeted intake for location, farm size, soil, water, budget, and season;
+- live seven-day Bangladesh weather from Open-Meteo;
+- four Rabi crop recommendations influenced by farm context, weather, finance, and BARC crop-zoning evidence;
+- six dated checkpoints from land preparation through harvest;
+- cost breakdown, yield, revenue, profit, ROI, and break-even;
+- 1,976 indexed fact cards from nine structured public-source datasets;
+- retrieved evidence attached to recommendations and plan stages;
+- a bounded GPT-5.6 Sol Responses API tool loop with strict allow-listed read tools;
+- an inspectable, secret-redacted operation trace;
+- PostgreSQL session persistence with an explicitly labeled memory fallback.
 
-## Real versus generated
+## Truth boundaries
 
-- **REAL:** Open-Meteo responses, timestamps, tool parameters, OpenAI responses when configured, and PostgreSQL writes when configured.
-- **DETERMINISTIC ASSUMPTIONS:** crop coefficients, seeded costs, yields, prices and calendar templates.
-- **GENERATED:** GPT-5.6 Sol explanation.
-- **NOT COMPLETE:** full agronomic validation, production RAG ingestion, Sol-directed tool selection, DigitalOcean verification and full Tier 0 regressions.
+| Category | Truth |
+|---|---|
+| Live | Open-Meteo responses; OpenAI responses when configured; PostgreSQL writes when configured. |
+| Retrieved | BARC crop zoning and fertilizer guidance, BAMIS/DAE records, and other supplied structured sources with provenance/confidence fields. |
+| Team assumptions | Base crop coefficients, costs, yields, prices, and default checkpoint offsets. |
+| Deferred | Tier 1/2, bdapps payments, image diagnosis, marketplace, Bengali voice, proactive alerts. |
 
-## Run locally
+The corpus contains partial and cautionary records. Exact agronomic dates and financial assumptions require local expert validation. Chemical pesticide advice is deliberately omitted without current DAE registry evidence.
+
+## Run
 
 Requires Node.js 22+.
 
 ```powershell
 Copy-Item .env.example .env
-npm.cmd install
-npm.cmd run build
+npm.cmd ci
+npm.cmd run check
 npm.cmd start
 ```
 
-Open `http://localhost:3001`. Development mode: `npm.cmd run dev`.
+Open <http://localhost:3001>. The canonical entry is a blank farmer conversation; **Run Gazipur demo** is only a rapid demonstration fixture.
 
-## DigitalOcean handoff
+Environment variables:
 
-Kawsar owns the Droplet, PostgreSQL connection and deployment.
+```text
+OPENAI_API_KEY=server-side-only
+OPENAI_MODEL=gpt-5.6-sol
+OPENAI_REASONING_EFFORT=high
+DATABASE_URL=server-side-only
+PORT=3001
+```
+
+Never place secret values in Git, the browser client, trace output, screenshots, or model prompts.
+
+## Verified locally
+
+On 24 July 2026:
+
+- `npm.cmd run check`: 15/15 tests passed and the production build passed;
+- `/api/health`: `Tier-0`, nine datasets, 1,976 indexed fact cards;
+- complete Gazipur HTTP flow: four crops, six checkpoints, six citations, live Open-Meteo, and visible trace;
+- bounded live `gpt-5.6-sol`/medium probe: the model selected all five evidence-inspection tools and returned a grounded explanation;
+- instruction-like retrieval text remained inert data;
+- unknown/repeated model tool calls were rejected and secret-shaped trace fields were redacted.
+
+The main local HTTP probe intentionally ran without secrets, so it exercised the labeled deterministic explanation and memory fallback. A separate transient server-side probe verified the live GPT-5.6 Sol tool loop without exposing the key. DigitalOcean and target PostgreSQL still require target-environment verification.
+
+## Evidence artifacts
+
+- `evaluation.html` — offline judge-facing acceptance ledger and conservative self-score.
+- `currentprogress.md` — exact implementation state and remaining gates.
+- `final plan.html` — validated Thinker-to-Executor handoff.
+- `next-session-prompt.md` — re-engineered execution contract.
+
+## DigitalOcean
 
 ```bash
 git clone https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense.git
@@ -46,25 +79,10 @@ cd rookieCoders_AgriSense
 npm ci
 npm run check
 npm run build
-export OPENAI_API_KEY='set-on-server'
-export OPENAI_MODEL='gpt-5.6-sol'
-export OPENAI_REASONING_EFFORT='high'
-export DATABASE_URL='set-on-server'
 pm2 start server/index.js --name agrisense
 pm2 save
 ```
 
-Point the existing Nginx/HTTPS route to port `3001`, then verify `https://YOUR_HOST/api/health`.
-
-## Verification executed locally
-
-`npm test`, `npm run build`, `/api/health`, and a complete seeded HTTP request using live Open-Meteo. OpenAI and DigitalOcean/PostgreSQL paths still require target-environment verification.
-
-## Rapid judge demo
-
-1. Show the blank conversation as the standard start.
-2. Click **Run Gazipur demo** for the rapid preview.
-3. Show live weather, four crops, finance, six checkpoints, citations and raw trace.
-4. State that this is `T0-Initial`, not completed Tier 0.
+Keep OpenAI and database credentials in the Droplet environment, point the existing Nginx/HTTPS route to port `3001`, then verify `/api/health` and one full blank-to-plan flow.
 
 Public repository: <https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense>

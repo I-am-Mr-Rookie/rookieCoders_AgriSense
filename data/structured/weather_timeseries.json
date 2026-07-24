@@ -1,0 +1,65 @@
+[
+  {
+    "record_id": "WX-GZ-OM-20260724",
+    "provenance_class": "THIRD_PARTY_LIVE_API",
+    "publisher": "Open-Meteo",
+    "source_title": "Open-Meteo Forecast API — single Gazipur sample",
+    "source_url": "https://api.open-meteo.com/v1/forecast?latitude=23.9999&longitude=90.4203&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&timezone=Asia%2FDhaka&forecast_days=1",
+    "publication_date": "2026-07-24T15:00",
+    "retrieved_at_utc": "2026-07-24T09:09:52Z",
+    "effective_from": "2026-07-24T15:00",
+    "effective_to": "2026-07-24T15:00",
+    "source_page_or_table": "JSON fields current.* and meta latitude/longitude/elevation/generationtime_ms",
+    "language": "en",
+    "geo_level": "point",
+    "geo_code": "Gazipur approx 23.9999N, 90.4203E (API resolved lat=24.007029, lon=90.38176)",
+    "crop": null,
+    "season": null,
+    "variety": null,
+    "source_unit": "{\"time\": \"iso8601\", \"interval\": \"seconds\", \"temperature_2m\": \"\\u00b0C\", \"relative_humidity_2m\": \"%\", \"precipitation\": \"mm\", \"wind_speed_10m\": \"km/h\"}",
+    "transform_notes": "One timestamped sample only; NOT evergreen climatology. Coordinates requested vs returned differ slightly (model grid). Hourly arrays available in raw openmeteo_gazipur.json but only current snapshot normalized here per Tier-0 'at most one timestamped Gazipur sample'.",
+    "license_status": "Open-Meteo open data (check open-meteo.com license/attribution)",
+    "confidence": "high",
+    "raw_content_hash": "13c6a53add64305d",
+    "coordinates": {
+      "requested": {
+        "lat": 23.9999,
+        "lon": 90.4203
+      },
+      "api_returned": {
+        "lat": 24.007029,
+        "lon": 90.38176
+      },
+      "elevation_m": 9.0
+    },
+    "provider_model": "Open-Meteo forecast API (model mix not named in response body)",
+    "forecast_run": null,
+    "issue_time": null,
+    "valid_time": "2026-07-24T15:00",
+    "retrieval_time_utc": "2026-07-24T09:09:52Z",
+    "observed_or_forecast": "forecast_api_current_slot",
+    "temperature_2m_c": 31.4,
+    "precipitation_mm": 0.1,
+    "relative_humidity_2m_pct": 72,
+    "wind_speed_10m_kmh": 12.7,
+    "freshness_flag": "point_in_time_2026-07-24T15:00_Asia/Dhaka",
+    "quality_flags": [
+      "REVALIDATE_PRIOR_NORMALIZATION_AGAINST_RAW_SOURCE",
+      "not_evergreen",
+      "single_sample",
+      "third_party_api"
+    ],
+    "timezone": "Asia/Dhaka",
+    "coverage_status": "OK",
+    "upstream_provenance_class": "THIRD_PARTY_LIVE_API",
+    "corpus_lane": "core",
+    "content_type": "weather_snapshot",
+    "source_file": "raw/supplied/initial_partial/e1e7afd0-6c12-4e47-ad60-0de88b710ed0.json",
+    "country": "Bangladesh",
+    "geo_name": "Gazipur approx 23.9999N, 90.4203E (API resolved lat=24.007029, lon=90.38176)",
+    "topics": [
+      "weather_timeseries"
+    ],
+    "normalized_unit": null
+  }
+]

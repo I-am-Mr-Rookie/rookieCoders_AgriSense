@@ -40,6 +40,29 @@ test("crop ranking changes when returned rainfall changes", () => {
   assert.ok(wet.every((crop) => crop.weatherEvidence.precipitationMm === 90));
 });
 
+test("crop ranking exposes and uses RAG suitability evidence", () => {
+  const profile = {
+    farmSizeAcres: 1,
+    soilType: "loam",
+    waterAvailability: "irrigated",
+    budgetBdt: 100000,
+    targetSeason: "Rabi",
+  };
+  const evidenceByCrop = {
+    mustard: { suitabilityScore: 95, sources: [{ id: "barc-mustard", publisher: "BARC" }] },
+    potato: { suitabilityScore: 10, sources: [{ id: "barc-potato", publisher: "BARC" }] },
+  };
+
+  const crops = rankCrops(profile, { meanTemperatureC: 22, precipitationMm: 25 }, evidenceByCrop);
+  const mustard = crops.find((crop) => crop.id === "mustard");
+  const potato = crops.find((crop) => crop.id === "potato");
+
+  assert.equal(mustard.scoreComponents.ragSuitability, 95);
+  assert.equal(potato.scoreComponents.ragSuitability, 10);
+  assert.ok(mustard.suitability > potato.suitability);
+  assert.equal(mustard.sources[0].id, "barc-mustard");
+});
+
 test("financial projection scales every value with farm size", () => {
   const oneAcre = calculateFinancials({
     farmSizeAcres: 1,
@@ -74,6 +97,20 @@ test("season plan contains every required checkpoint from land preparation to ha
     "harvest",
   ]);
   assert.ok(plan.every((item) => /^202\d-\d{2}-\d{2}$/.test(item.date)));
+});
+
+test("season plan labels retrieved evidence and team assumptions", () => {
+  const plan = buildSeasonPlan("mustard", "2026-11-01", {
+    calendar: [{ id: "calendar-1", publisher: "BAMIS", text: "Mustard Rabi calendar" }],
+    fertilizer: [{ id: "fert-1", publisher: "BARC", text: "Elemental nutrient guidance" }],
+    irrigation: [],
+    pest: [{ id: "pest-1", publisher: "BAMIS", text: "Inspect for stem rot" }],
+  });
+
+  assert.equal(plan.find((item) => item.stage === "fertilizer").evidence[0].id, "fert-1");
+  assert.equal(plan.find((item) => item.stage === "weed_pest").evidence[0].id, "pest-1");
+  assert.equal(plan.find((item) => item.stage === "irrigation").truthLabel, "TEAM_ASSUMPTION");
+  assert.ok(plan.every((item) => item.truthLabel));
 });
 
 test("retrieval returns public-source citations rather than model recall", () => {

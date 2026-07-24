@@ -3,9 +3,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 
-import { buildSeasonPlan, createTraceEntry, getMissingFields, rankCrops, retrieveKnowledge } from "./core.js";
+import { buildSeasonPlan, createTraceEntry, getMissingFields, rankCrops } from "./core.js";
 import { databaseMode, initializeDatabase, loadSession, saveSession } from "./db.js";
 import { explainRecommendation, extractProfilePatch, openAiMode } from "./openai.js";
+import { getCropEvidence, getPlanEvidence, loadCorpus, retrieveFacts } from "./rag.js";
 import { getWeather } from "./weather.js";
 
 const app = express();
@@ -16,7 +17,12 @@ const dist = path.resolve(__dirname, "../dist");
 app.use(express.json({ limit: "64kb" }));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, phase: "T0-Initial", database: databaseMode(), model: openAiMode() });
+  const corpus = loadCorpus().report;
+  res.json({ ok: true, phase: "Tier-0", database: databaseMode(), model: openAiMode(), rag: corpus });
+});
+
+app.get(["/evaluation", "/evaluation.html"], (_req, res) => {
+  res.sendFile(path.resolve(__dirname, "../evaluation.html"));
 });
 
 const FIELD_LABELS = {
@@ -52,24 +58,42 @@ app.post("/api/session/message", async (req, res) => {
     trace.push(createTraceEntry("weather.getForecast", { location: session.profile.location, days: 7 }, weather, Date.now() - weatherStarted));
 
     const retrievalStarted = Date.now();
-    const knowledge = retrieveKnowledge(`${session.profile.targetSeason} ${session.profile.soilType} fertilizer irrigation Bangladesh`, 3);
-    trace.push(createTraceEntry("knowledge.retrieve", { query: `${session.profile.targetSeason} ${session.profile.soilType}`, limit: 3 }, knowledge, Date.now() - retrievalStarted));
+    const cropIds = ["mustard", "potato", "maize", "boro-rice"];
+    const evidenceByCrop = Object.fromEntries(cropIds.map((id) => [id, getCropEvidence(session.profile, id)]));
+    const knowledge = retrieveFacts(
+      `${session.profile.targetSeason} ${session.profile.soilType} fertilizer irrigation ${session.profile.location}`,
+      { topK: 6 },
+    ).results.map((item) => ({
+      id: item.id,
+      dataset: item.dataset,
+      crop: item.crop,
+      title: item.provenance.sourceTitle,
+      publisher: item.provenance.publisher,
+      sourceUrl: item.provenance.sourceUrl,
+      sourcePage: item.provenance.sourcePage,
+      confidence: item.provenance.confidence,
+      text: item.text.slice(0, 520),
+    }));
+    trace.push(createTraceEntry("rag.retrieve", { query: `${session.profile.targetSeason} ${session.profile.soilType}`, cropCount: cropIds.length, limit: 6 }, { evidenceByCrop, knowledge }, Date.now() - retrievalStarted));
 
-    const crops = rankCrops(session.profile, weather);
+    const crops = rankCrops(session.profile, weather, evidenceByCrop);
     trace.push(createTraceEntry("crops.rank", { profile: session.profile, weather: { precipitationMm: weather.precipitationMm, meanTemperatureC: weather.meanTemperatureC } }, crops.map(({ id, suitability, roughProfitBdt }) => ({ id, suitability, roughProfitBdt })), 0));
 
     const startDate = req.body.startDate || "2026-11-01";
-    const seasonPlan = buildSeasonPlan(crops[0].id, startDate);
+    const planEvidence = getPlanEvidence(crops[0].id, session.profile);
+    const seasonPlan = buildSeasonPlan(crops[0].id, startDate, planEvidence);
     trace.push(createTraceEntry("season.build", { cropId: crops[0].id, startDate }, seasonPlan, 0));
 
-    const explanation = await explainRecommendation({ profile: session.profile, weather, knowledge, crops, seasonPlan });
-    trace.push(createTraceEntry("agent.explain", { model: openAiMode() }, { explanation }, Date.now() - started));
+    const rag = { ...loadCorpus().report, retrieval: "in-process structured lexical retrieval", embeddingMode: "not used" };
+    const explanation = await explainRecommendation({ profile: session.profile, weather, knowledge, crops, seasonPlan, rag });
+    trace.push(...explanation.trace);
+    trace.push(createTraceEntry("agent.finalize", { model: openAiMode(), mode: explanation.mode }, { text: explanation.text, usage: explanation.usage ?? null }, Date.now() - started));
 
-    session.lastResult = { weather, knowledge, crops, seasonPlan, explanation, trace };
+    session.lastResult = { weather, knowledge, crops, seasonPlan, explanation: explanation.text, rag, trace };
     await saveSession(session);
     res.json({ sessionId, profile: session.profile, assistant: explanation, ...session.lastResult });
   } catch (error) {
-    res.status(502).json({ error: error.message, phase: "T0-Initial", recoverable: true });
+    res.status(502).json({ error: error.message, phase: "Tier-0", recoverable: true });
   }
 });
 
@@ -77,7 +101,7 @@ app.use(express.static(dist));
 app.get("*path", (_req, res) => res.sendFile(path.join(dist, "index.html")));
 
 initializeDatabase()
-  .then((mode) => app.listen(port, () => console.log(`AgriSense T0-Initial listening on :${port} (${mode})`)))
+  .then((mode) => app.listen(port, () => console.log(`AgriSense Tier-0 listening on :${port} (${mode})`)))
   .catch((error) => {
     console.error("Database initialization failed", error);
     process.exitCode = 1;

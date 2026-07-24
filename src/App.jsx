@@ -52,7 +52,7 @@ export default function App() {
   return (
     <main>
       <header>
-        <div><span className="eyebrow">Rookie Coders · T0-Initial</span><h1>AgriSense</h1></div>
+        <div><span className="eyebrow">Rookie Coders · Tier 0</span><h1>AgriSense</h1></div>
         <button className="demo" disabled={busy} onClick={() => send({ profilePatch: DEMO_PROFILE })}>Run Gazipur demo</button>
       </header>
 
@@ -75,20 +75,20 @@ export default function App() {
           <h3>Recommendation</h3>
           {!best ? <p className="muted">Complete the intake or run the demo.</p> : <>
             <div className="best"><span>Best fit</span><strong>{best.name}</strong><em>{best.suitability}% suitability · {best.riskLevel} risk</em></div>
-            <dl><div><dt>7-day rain</dt><dd>{result.weather.precipitationMm.toFixed(1)} mm</dd></div><div><dt>Mean temperature</dt><dd>{result.weather.meanTemperatureC.toFixed(1)}°C</dd></div><div><dt>Expected revenue</dt><dd><Money value={best.financials.revenueBdt} /></dd></div><div><dt>Net profit</dt><dd><Money value={best.financials.netProfitBdt} /></dd></div><div><dt>ROI</dt><dd>{best.financials.roiPercent}%</dd></div><div><dt>Break-even yield</dt><dd>{best.financials.breakEvenYieldKg.toFixed(0)} kg</dd></div></dl>
+            <dl><div><dt>7-day rain</dt><dd>{result.weather.precipitationMm.toFixed(1)} mm</dd></div><div><dt>Mean temperature</dt><dd>{result.weather.meanTemperatureC.toFixed(1)}°C</dd></div><div><dt>BARC zoning score</dt><dd>{best.scoreComponents.ragSuitability ?? "Unavailable"}</dd></div><div><dt>Expected revenue</dt><dd><Money value={best.financials.revenueBdt} /></dd></div><div><dt>Net profit</dt><dd><Money value={best.financials.netProfitBdt} /></dd></div><div><dt>ROI</dt><dd>{best.financials.roiPercent}%</dd></div><div><dt>Break-even yield</dt><dd>{best.financials.breakEvenYieldKg.toFixed(0)} kg</dd></div></dl>
           </>}
         </section>
       </div>
 
       {result && <>
-        <section className="panel"><h3>Four ranked crops</h3><div className="cards">{result.crops.map((crop, index) => <article key={crop.id}><span>#{index + 1}</span><h4>{crop.name}</h4><b>{crop.suitability}%</b><p>{crop.waterNeed} water · {crop.riskLevel} risk</p><small>Profit estimate: <Money value={crop.roughProfitBdt} /></small></article>)}</div></section>
-        <section className="panel"><h3>Dated season checkpoints</h3><div className="timeline">{result.seasonPlan.map((item) => <article key={item.stage}><time>{item.date}</time><b>{item.stage.replaceAll("_", " ")}</b><p>{item.action}</p></article>)}</div></section>
+        <section className="panel"><h3>Four ranked crops</h3><div className="cards">{result.crops.map((crop, index) => <article key={crop.id}><span>#{index + 1}</span><h4>{crop.name}</h4><b>{crop.suitability}%</b><p>{crop.waterNeed} water · {crop.riskLevel} risk</p><small>Profit estimate: <Money value={crop.roughProfitBdt} /></small><small>{crop.sources.length} zoning source record(s)</small></article>)}</div></section>
+        <section className="panel"><h3>Dated season checkpoints</h3><div className="timeline">{result.seasonPlan.map((item) => <article key={item.stage}><time>{item.date}</time><b>{item.stage.replaceAll("_", " ")}</b><small>{item.truthLabel === "RETRIEVED_EVIDENCE" ? "Retrieved evidence" : "Team assumption"}</small><p>{item.action}</p>{item.evidence?.[0] && <a href={item.evidence[0].url} target="_blank" rel="noreferrer">{item.evidence[0].publisher || item.evidence[0].title}</a>}</article>)}</div></section>
         <div className="layout">
-          <section className="panel"><h3>Retrieved knowledge</h3>{result.knowledge.map((item) => <article className="source" key={item.id}><a href={item.sourceUrl} target="_blank">{item.title}</a><p>{item.text}</p></article>)}</section>
+          <section className="panel"><h3>Retrieved knowledge</h3><p className="muted">{result.rag.totalIndexed} indexed fact cards across {result.rag.datasetCount} datasets.</p>{result.knowledge.map((item) => <article className="source" key={item.id}><a href={item.sourceUrl} target="_blank" rel="noreferrer">{item.title}</a><small>{item.publisher} · {item.dataset} · confidence {item.confidence || "unrated"}</small><p>{item.text}</p></article>)}</section>
           <section className="panel"><h3>Visible agent trace</h3><details open><summary>{result.trace.length} recorded operations</summary><pre>{JSON.stringify(result.trace, null, 2)}</pre></details></section>
         </div>
       </>}
-      <footer>T0-Initial prototype · Figures are transparent demo assumptions pending full agronomic validation.</footer>
+      <footer>Tier 0 · Live weather and retrieved public evidence are separated from transparent team assumptions. <a href="/evaluation.html">Open the self-test.</a></footer>
     </main>
   );
 }

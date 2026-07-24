@@ -73,14 +73,21 @@ export function calculateFinancials({ farmSizeAcres, yieldPerAcreKg, pricePerKgB
   };
 }
 
-export function rankCrops(profile, weather) {
+export function rankCrops(profile, weather, evidenceByCrop = {}) {
   return CROPS.map((crop) => {
     const rainScore = clamp(40 - Math.abs(weather.precipitationMm - crop.idealRainMm) * 0.55, 0, 40);
     const temperatureScore = clamp(30 - Math.abs(weather.meanTemperatureC - crop.idealTempC) * 3, 0, 30);
     const soilScore = ["loam", "sandy loam", "clay loam"].includes(String(profile.soilType).toLowerCase()) ? 15 : 9;
     const waterPenalty = profile.waterAvailability === "limited" && crop.waterNeed === "high" ? 12 : 0;
     const budgetPenalty = profile.budgetBdt < crop.baseCostBdt * profile.farmSizeAcres ? 15 : 0;
-    const suitability = Math.round(clamp(rainScore + temperatureScore + soilScore + 15 - waterPenalty - budgetPenalty, 0, 100));
+    const baseSuitability = clamp(rainScore + temperatureScore + soilScore + 15 - waterPenalty - budgetPenalty, 0, 100);
+    const evidence = evidenceByCrop[crop.id] ?? {};
+    const ragSuitability = Number.isFinite(evidence.suitabilityScore) ? evidence.suitabilityScore : null;
+    const suitability = Math.round(clamp(
+      ragSuitability === null ? baseSuitability : baseSuitability * 0.72 + ragSuitability * 0.28,
+      0,
+      100,
+    ));
     const financials = calculateFinancials({
       farmSizeAcres: profile.farmSizeAcres,
       yieldPerAcreKg: crop.yieldKg,
@@ -103,6 +110,16 @@ export function rankCrops(profile, weather) {
         precipitationMm: weather.precipitationMm,
         meanTemperatureC: weather.meanTemperatureC,
       },
+      scoreComponents: {
+        weatherRain: Math.round(rainScore * 10) / 10,
+        weatherTemperature: Math.round(temperatureScore * 10) / 10,
+        soil: soilScore,
+        waterPenalty,
+        budgetPenalty,
+        baseSuitability: Math.round(baseSuitability * 10) / 10,
+        ragSuitability,
+      },
+      sources: evidence.sources ?? [],
     };
   }).sort((a, b) => b.suitability - a.suitability || b.roughProfitBdt - a.roughProfitBdt);
 }
@@ -113,15 +130,22 @@ function addDays(dateString, days) {
   return date.toISOString().slice(0, 10);
 }
 
-export function buildSeasonPlan(cropId, startDate) {
+export function buildSeasonPlan(cropId, startDate, planEvidence = {}) {
   const crop = CROPS.find((item) => item.id === cropId) ?? CROPS[0];
+  const stage = (name, days, action, evidence = []) => ({
+    stage: name,
+    date: addDays(startDate, days),
+    action,
+    truthLabel: evidence.length ? "RETRIEVED_EVIDENCE" : "TEAM_ASSUMPTION",
+    evidence,
+  });
   return [
-    { stage: "land_preparation", date: addDays(startDate, 0), action: "Prepare and level the field; verify drainage." },
-    { stage: "sowing", date: addDays(startDate, 7), action: `Sow ${crop.name} within the selected Rabi window.` },
-    { stage: "fertilizer", date: addDays(startDate, 22), action: "Apply the first scheduled fertilizer dose after checking the forecast and retrieved guide." },
-    { stage: "irrigation", date: addDays(startDate, 35), action: "Irrigate only after comparing field moisture with forecast rainfall." },
-    { stage: "weed_pest", date: addDays(startDate, 50), action: "Inspect weeds and pests; record symptoms before treatment." },
-    { stage: "harvest", date: addDays(startDate, crop.durationDays), action: `Harvest ${crop.name} at crop maturity and record realized yield.` },
+    stage("land_preparation", 0, "Prepare and level the field; verify drainage."),
+    stage("sowing", 7, `Sow ${crop.name} within the selected Rabi window.`, planEvidence.calendar),
+    stage("fertilizer", 22, "Use the retrieved nutrient guidance only after a local soil test; do not infer product doses.", planEvidence.fertilizer),
+    stage("irrigation", 35, "Irrigate only after comparing field moisture with forecast rainfall.", planEvidence.irrigation),
+    stage("weed_pest", 50, "Inspect weeds and pests; record symptoms before treatment. No pesticide is recommended without registry evidence.", planEvidence.pest),
+    stage("harvest", crop.durationDays, `Harvest ${crop.name} at crop maturity and record realized yield.`, planEvidence.yield),
   ];
 }
 

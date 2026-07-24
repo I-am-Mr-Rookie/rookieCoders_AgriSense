@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AgriSense Tier 0 Evaluation</title>
+  <style>
+    :root{color-scheme:light;--ink:#18332c;--green:#176b4d;--pale:#eef8f3;--amber:#9a5b00;--line:#cfe0d8}
+    *{box-sizing:border-box}body{margin:0;background:#f7faf8;color:var(--ink);font:16px/1.5 system-ui,sans-serif}
+    main{max-width:1100px;margin:auto;padding:28px}h1,h2{line-height:1.15}header,.card{background:white;border:1px solid var(--line);border-radius:16px;padding:22px;margin:0 0 18px}
+    .verdict{display:inline-block;background:var(--pale);color:var(--green);font-weight:800;padding:7px 12px;border-radius:99px}
+    table{width:100%;border-collapse:collapse;background:white}th,td{padding:11px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}th{background:var(--pale)}
+    .pass{color:var(--green);font-weight:800}.caution{color:var(--amber);font-weight:800}code,pre{background:#10251f;color:#eaf8f2;border-radius:10px}pre{padding:16px;overflow:auto}
+    @media(max-width:700px){main{padding:14px}.scroll{overflow:auto}th,td{min-width:150px}}
+  </style>
+</head>
+<body><main>
+  <header>
+    <span class="verdict">LOCAL TIER 0: PASS WITH TARGET VERIFICATION PENDING</span>
+    <h1>AgriSense evidence-backed self-test</h1>
+    <p>Frozen at 24 July 2026, 21:08 Asia/Dhaka. This page reports executed evidence, not aspirational capability.</p>
+  </header>
+
+  <section class="card"><h2>Starting-state assessment</h2>
+    <p><strong>Approximately 38% complete.</strong> The initial app had a working vertical slice, live weather, finance, and six tests, but only four static source cards, no imported Kawsar corpus, no evidence contribution to scoring, and no model-selected tool sequence.</p>
+  </section>
+
+  <section class="card"><h2>Tier 0 acceptance ledger</h2><div class="scroll"><table>
+    <thead><tr><th>Official capability</th><th>State</th><th>Executable evidence</th><th>Boundary</th></tr></thead><tbody>
+      <tr><td>Targeted intake</td><td class="pass">PASS</td><td>Missing-field unit test.</td><td>Free-text extraction requires server OpenAI key.</td></tr>
+      <tr><td>Live weather</td><td class="pass">PASS</td><td>HTTP flow returned Open-Meteo.</td><td>Network-dependent and time-sensitive.</td></tr>
+      <tr><td>3+ crops</td><td class="pass">PASS</td><td>Four returned; rainfall and RAG alter ranking.</td><td>Base coefficients are team assumptions.</td></tr>
+      <tr><td>Season plan</td><td class="pass">PASS</td><td>Six stages; 5 evidence-backed, 1 labeled assumption in Gazipur probe.</td><td>Exact dates need local validation.</td></tr>
+      <tr><td>Financials</td><td class="pass">PASS</td><td>Scaling and consistency unit test.</td><td>Prices, yield, costs are demo assumptions.</td></tr>
+      <tr><td>Explained reasoning</td><td class="pass">PASS</td><td>Bounded loop unit-tested; live GPT-5.6 Sol/medium selected all five evidence tools and completed.</td><td>Exact target-environment repeat remains pending.</td></tr>
+      <tr><td>RAG feeds advice</td><td class="pass">PASS</td><td>1,976 fact cards; BARC score blended into recommendation; plan receives source records.</td><td>Lexical/structured retrieval, not embeddings.</td></tr>
+      <tr><td>Visible trace</td><td class="pass">PASS</td><td>HTTP response exposed 5 operations; UI renders raw trace.</td><td>Secrets are redacted; model calls appear only when configured.</td></tr>
+    </tbody>
+  </table></div></section>
+
+  <section class="card"><h2>Executed medium evaluation</h2>
+    <pre>npm.cmd run check
+tests 15 | pass 15 | fail 0
+vite production build: PASS
+
+Gazipur HTTP probe
+health=true; datasets=9; indexed=1976; crops=4; stages=6
+citations=6; trace=5; weather=Open-Meteo
+evidence-backed stages=5; assumption stages=1</pre>
+    <pre>Bounded live OpenAI probe
+model=gpt-5.6-sol/medium
+selected tools=weather, RAG evidence, rankings, season plan, financials
+explanation returned=true</pre>
+  </section>
+
+  <section class="card"><h2>Conservative rubric outlook</h2>
+    <p><strong>Estimated local readiness: 74/100, not a judge score.</strong> Strongest areas are Tier 0 scope, visible trace, structured Bangladesh knowledge, real model tool selection, and testability. Material deductions remain for unverified target PostgreSQL execution, partial agronomic calendar/economics validation, no bdapps integration, and deferred Tier 1/2 innovation.</p>
+    <p class="caution">Do not call this production agronomic advice. Deploy and exercise the exact revision before a final submission claim.</p>
+  </section>
+</main></body></html>
