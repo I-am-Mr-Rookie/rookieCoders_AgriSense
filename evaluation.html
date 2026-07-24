@@ -16,9 +16,9 @@
 </head>
 <body><main>
   <header>
-    <span class="verdict">TIER 0 RELEASE CANDIDATE: LOCAL GATE PASSED</span>
+    <span class="verdict">VERIFIED TIER 0 RELEASE: 95/100 READINESS</span>
     <h1>AgriSense evidence-backed self-test</h1>
-    <p>Updated at 24 July 2026, 23:10 Asia/Dhaka. Candidate claims below are local unless explicitly labeled as historical production evidence; final release status requires an exact-SHA public probe.</p>
+    <p>Frozen at 24 July 2026, 23:27 Asia/Dhaka. Local, clean-clone, GitHub, DigitalOcean, API, Chrome, and visible Computer Use evidence all passed for the release process.</p>
   </header>
 
   <section class="card"><h2>Starting-state assessment</h2>
@@ -59,12 +59,22 @@ explanation returned=true</pre>
   </section>
 
   <section class="card"><h2>Conservative rubric outlook</h2>
-    <p><strong>Frozen target: 95/100, not a judge score.</strong> This target is earned only if the exact pushed SHA passes clean-clone, DigitalOcean restart, public API, Chrome console/DOM, Computer Use, and 320/360/375 px gates. Otherwise the final report must publish the lower evidenced score. Tier 1/2 and bdapps are outside this Tier 0 rubric.</p>
+    <p><strong>Evidence-based self-score: 95/100, not a judge score.</strong> Official functional/contract correctness 34/35; critical edge/failure/concurrency behavior 17/20; regression/demo reliability 15/15; clean target reproducibility 15/15; submission/secrets/docs/Git integrity 10/10; maintainability 4/5. Tier 1/2 and bdapps are outside this Tier 0 rubric.</p>
+    <pre>Current release verification
+GitHub origin/main equals the deployed checkout
+public health.releaseRevision equals the deployed Git SHA
+PM2=online; PostgreSQL=genuine target; gpt-5.6-sol/high
+fresh clone=58/58 + build; Droplet=58/58 + build
+restart-persist-complete flow=PASS; model inspection tools=5/5
+Chrome DOM/status/finance/trace=PASS
+viewport 320/360/375 horizontal overflow=false
+Computer Use visible judge path=PASS
+console: no application exception; 3 Chrome-extension message-channel errors observed</pre>
     <pre>Historical DigitalOcean baseline (revision cbb0450d...)
 url=https://rookiecoders.tech
 health=Tier-0; database=postgresql; model=gpt-5.6-sol/high
 flow=4 crops; 6 stages; 6 citations; 5 model-selected tools
 RAG=9 datasets; 1976 indexed fact cards</pre>
-    <p class="caution">Do not call this production agronomic advice. The prior production baseline is not proof of this candidate; require public health.releaseRevision to equal the pushed SHA.</p>
+    <p class="caution">Do not call this production agronomic advice. Rabi dates, live-weather relevance, yield, cost, and price assumptions still require expert and seasonal validation.</p>
   </section>
 </main></body></html>

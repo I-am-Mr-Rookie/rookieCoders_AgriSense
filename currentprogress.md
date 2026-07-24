@@ -4,7 +4,7 @@
 
 **Repository:** <https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense>
 
-**Status:** The hardened Tier 0 release candidate passes its local gate. Exact-SHA deployment and public E4 verification are still required before calling this candidate deployed.
+**Status:** The hardened Tier 0 release is pushed, deployed, and verified through exact-SHA health, restart persistence, public API, Chrome, mobile geometry, and visible Computer Use gates.
 
 ## Executive verdict
 
@@ -53,7 +53,7 @@ Historical production baseline verification passed before this hardening campaig
 - public URL: <https://rookiecoders.tech>;
 - the six pre-existing Droplet-only RAG commits remain preserved on `server-rag-backup-20260724T153137Z`.
 
-This evidence is not silently transferred to the newer candidate. Final release proof requires public `/api/health.releaseRevision` to equal the pushed SHA, a restart/retry probe, a clean clone, and visible browser checks.
+Current release proof is separate from that baseline: origin/main and the Droplet checkout matched; public `/api/health.releaseRevision` matched the deployed Git SHA; a partial PostgreSQL session survived PM2 restart and completed with four crops, six stages, eight finance fields, rationale/source IDs, Open-Meteo, and all five model-selected inspection tools. Chrome showed the generated plan and 10-operation trace; 320/360/375 px had no horizontal overflow; visible Computer Use confirmed the judge path. Three Chrome-extension message-channel errors were observed, but no application exception.
 
 ## Truth boundaries
 

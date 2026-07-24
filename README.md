@@ -75,7 +75,7 @@ Current release candidate on 24 July 2026:
 
 The main local HTTP probe intentionally ran without secrets, so it exercised the labeled deterministic explanation and memory fallback. A separate transient server-side probe verified the live GPT-5.6 Sol tool loop without exposing the key.
 
-The last verified DigitalOcean baseline at <https://rookiecoders.tech> was revision `cbb0450d062b383e6cbd02dde34adf7919d60186`: HTTPS health reported PostgreSQL, `gpt-5.6-sol/high`, nine datasets, and 1,976 fact cards, and a complete Gazipur flow returned four crops, six checkpoints, citations, live Open-Meteo data, and all five model-selected evidence tools. The current candidate must not be described as deployed until public health returns its exact `releaseRevision`.
+The hardened release is deployed at <https://rookiecoders.tech>. The release process verified that GitHub `origin/main`, the Droplet checkout, PM2's `APP_REVISION`, and public `/api/health.releaseRevision` matched. A partial PostgreSQL session survived restart and completed with four crops, six checkpoints, all eight finance fields, cited rationales, live Open-Meteo data, and all five model-selected evidence tools. Chrome and visible Computer Use verified the judge path; 320/360/375 px checks found no horizontal overflow.
 
 ## Evidence artifacts
 

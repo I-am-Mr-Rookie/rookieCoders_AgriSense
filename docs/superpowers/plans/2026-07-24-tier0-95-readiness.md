@@ -195,19 +195,19 @@ Review Tasks 1–4 against this plan and the eight official Tier 0 capabilities.
 
 Review the approved implementation for correctness, recovery, data boundaries, React behavior, test quality, and accidental scope. Fix every Critical or Important issue and re-review.
 
-- [ ] **Step 3: Fresh-clone gate**
+- [x] **Step 3: Fresh-clone gate**
 
 Clone `origin/main` into a new temporary directory after the verified commit exists; run `npm ci`, `npm test`, and `npm run build`. No local dependency cache or untracked source may be required.
 
-- [ ] **Step 4: Release gates**
+- [x] **Step 4: Release gates**
 
 Scan tracked source and `dist` for secret-shaped values, verify `.env` and credential files are untracked, confirm only `roadmap-t0.html` remains intentionally untracked, push `main`, and verify remote SHA.
 
-- [ ] **Step 5: Deploy exact release**
+- [x] **Step 5: Deploy exact release**
 
 Fast-forward the preserved Droplet checkout, run `npm ci`, tests, build, set `APP_REVISION` to the release SHA, restart and save PM2, and verify public health reports the same SHA.
 
-- [ ] **Step 6: Target E3/E4 verification**
+- [x] **Step 6: Target E3/E4 verification**
 
 Run:
 
@@ -220,6 +220,6 @@ Run:
 - visible Computer Use judge path;
 - 320, 360, and 375 px overflow checks.
 
-- [ ] **Step 7: Re-score once**
+- [x] **Step 7: Re-score once**
 
 Score the unchanged six criteria using only executed evidence. Declare 95 only if the sum is at least 95 and every critical Tier 0 requirement has E2–E4 evidence. Otherwise report the exact lower score and blockers without rounding.

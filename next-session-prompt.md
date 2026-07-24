@@ -34,7 +34,7 @@ Do not implement Tier 1, Tier 2, bdapps, embeddings, broad UI polish, or unrelat
 - The included corpus indexes 1,976 unblocked fact cards across nine structured datasets.
 - Validation, persistence truth, positive-overlap retrieval, crop rationales, model recovery, fresh-demo state, accessibility, responsive CSS, and release identity are implemented.
 - Kawsar corpus limitations must remain visible: production costs are assumptions, calendar/irrigation coverage is partial, some Bengali extraction is garbled, and `PRIOR_PARTIAL` records require caution.
-- DigitalOcean/PostgreSQL/OpenAI passed on the historical baseline, but those results do not prove the current candidate. Exact-SHA target verification remains mandatory.
+- The release process passed exact-SHA GitHub/DigitalOcean/public-health verification, PostgreSQL restart persistence, live OpenAI five-tool selection, Chrome DOM/mobile checks, and visible Computer Use.
 
 ## Frozen Product Decisions
 
