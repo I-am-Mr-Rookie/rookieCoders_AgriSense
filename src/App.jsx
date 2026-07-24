@@ -1,8 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-
 import { assistantText } from "../shared/assistant.js";
+import {
+  appendRunEvent,
+  cancelAgentRun,
+  completeAgentRun,
+  createAgentRun,
+  failAgentRun,
+  toggleRunCollapsed,
+} from "./agent-run.js";
+import AgentRunMessage from "./components/AgentRunMessage.jsx";
+import EvidenceGroupList from "./components/EvidenceGroupList.jsx";
+import Markdown from "./components/Markdown.jsx";
 import {
   createFreshDemoState,
   createInitialConversation,
@@ -10,6 +18,7 @@ import {
   persistSessionId,
 } from "./session.js";
 import { redactRecoveryIds } from "../shared/redaction.js";
+import { createRunPresenter } from "./run-presenter.js";
 import { consumeNdjsonStream } from "./stream.js";
 import { applyTheme, loadThemePreference, persistThemePreference } from "./theme.js";
 
@@ -30,64 +39,14 @@ function Money({ value }) {
   }).format(value)}</>;
 }
 
-function Markdown({ children }) {
-  return (
-    <div className="markdown">
-      <ReactMarkdown
-        skipHtml
-        remarkPlugins={[remarkGfm]}
-        components={{
-          a: ({ node: _node, ...props }) => <a {...props} target="_blank" rel="noreferrer" />,
-        }}
-      >
-        {String(children || "")}
-      </ReactMarkdown>
-    </div>
-  );
+function wait(delayMs) {
+  return new Promise((resolve) => globalThis.setTimeout(resolve, delayMs));
 }
 
-function ActivityFeed({ activities, busy, reasoningSummaries }) {
-  if (!activities.length && !busy && !reasoningSummaries.length) return null;
-  return (
-    <section className="panel activity-panel" aria-live="polite">
-      <div className="section-heading">
-        <div><span className="eyebrow">Live workflow</span><h3>Agent activity</h3></div>
-        <span className={`live-badge ${busy ? "running" : "complete"}`}>
-          {busy ? "Working" : "Complete"}
-        </span>
-      </div>
-      <div className="activity-list">
-        {activities.map((event) => (
-          <details key={event.id}>
-            <summary>
-              <span className={`activity-dot ${event.status}`} aria-hidden="true" />
-              <span>{event.label}</span>
-              {Number.isFinite(event.durationMs) && <time>{event.durationMs} ms</time>}
-            </summary>
-            <div className="activity-detail">
-              <small>{event.type} · {event.timestamp}</small>
-              {Object.keys(event.details || {}).length > 0
-                ? <pre>{JSON.stringify(event.details, null, 2)}</pre>
-                : <p>No additional data was returned for this step.</p>}
-            </div>
-          </details>
-        ))}
-        {busy && <div className="activity-pending"><i /><span>Waiting for the next verified step…</span></div>}
-      </div>
-      {reasoningSummaries.length > 0 && (
-        <div className="reasoning-summaries">
-          <h4>Model reasoning summary</h4>
-          <p className="muted">Concise summaries supplied by the API; private raw chain-of-thought is never exposed.</p>
-          {reasoningSummaries.map((summary, index) => (
-            <details key={`${index}-${summary.slice(0, 20)}`}>
-              <summary>API reasoning summary {index + 1}</summary>
-              <Markdown>{summary}</Markdown>
-            </details>
-          ))}
-        </div>
-      )}
-    </section>
-  );
+function updateConversationRun(items, runId, update) {
+  return items.map((item) => (
+    item.run?.id === runId ? { ...item, run: update(item.run) } : item
+  ));
 }
 
 function MemoryPanel({
@@ -198,15 +157,10 @@ function Schedule({ items = [] }) {
             <details className="schedule-evidence">
               <summary>Evidence & safety details</summary>
               <p>Advice: {item.adviceTruthLabel} · Cost: {item.costTruthLabel}</p>
-              {item.evidence.length ? (
-                <ul>{item.evidence.map((evidence, index) => (
-                  <li key={evidence.id || index}>
-                    {evidence.url
-                      ? <a href={evidence.url} target="_blank" rel="noreferrer">{evidence.publisher || evidence.id || "Source"}</a>
-                      : evidence.publisher || evidence.id || "Retrieved source"}
-                  </li>
-                ))}</ul>
-              ) : <p>No direct quantity evidence is attached.</p>}
+              <EvidenceGroupList
+                records={item.evidence}
+                emptyMessage="No direct quantity evidence is attached."
+              />
             </details>
           </article>
         ))}
@@ -220,7 +174,6 @@ export default function App() {
   const [message, setMessage] = useState("");
   const [conversation, setConversation] = useState(createInitialConversation);
   const [result, setResult] = useState(null);
-  const [activities, setActivities] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [theme, setTheme] = useState(loadThemePreference);
@@ -233,32 +186,62 @@ export default function App() {
   const [planStartDate, setPlanStartDate] = useState("2026-11-01");
   const [lastRequest, setLastRequest] = useState(null);
   const requestController = useRef(null);
+  const runSequence = useRef(0);
+  const messagesRef = useRef(null);
+  const keepMessagesPinnedRef = useRef(true);
   const best = useMemo(() => result?.crops?.[0], [result]);
-  const reasoningSummaries = result?.reasoningSummaries ?? [];
+  const latestRun = useMemo(() => {
+    for (let index = conversation.length - 1; index >= 0; index -= 1) {
+      if (conversation[index].run) return conversation[index].run;
+    }
+    return null;
+  }, [conversation]);
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
-  const status = busy
+  useEffect(() => {
+    const messages = messagesRef.current;
+    if (messages && keepMessagesPinnedRef.current) {
+      messages.scrollTo({ top: messages.scrollHeight, behavior: "smooth" });
+    }
+  }, [conversation]);
+
+  const status = latestRun?.status === "running"
     ? {
-        title: activities.at(-1)?.label || "Request in progress",
-        detail: "Verified progress appears below as each tool and workflow step completes.",
+        title: latestRun.events.at(-1)?.label || "Request in progress",
+        detail: "Verified progress appears inside the current AgriSense message.",
       }
-    : error
+    : latestRun?.status === "failed"
       ? {
           title: "Request failed",
           detail: result ? "The previous plan remains visible." : "No plan was generated.",
         }
-      : result
+      : latestRun?.status === "cancelled"
+        ? {
+            title: "Request cancelled",
+            detail: "The stopped run remains available to inspect or retry.",
+          }
+        : latestRun?.status === "complete"
         ? {
             title: "Plan generated",
-            detail: result.weather?.source || "Weather source unavailable",
+            detail: result?.weather?.source || "Weather source unavailable",
           }
-        : {
-            title: "Not started",
-            detail: "No live data has been requested yet.",
-          };
+        : error
+          ? {
+              title: "Request failed",
+              detail: result ? "The previous plan remains visible." : "No plan was generated.",
+            }
+          : result
+            ? {
+                title: "Plan generated",
+                detail: result?.weather?.source || "Weather source unavailable",
+              }
+            : {
+                title: "Not started",
+                detail: "No live data has been requested yet.",
+              };
 
   function changeTheme(nextTheme) {
     setTheme(persistThemePreference(nextTheme));
@@ -266,8 +249,20 @@ export default function App() {
 
   async function send(payload, requestSessionId = sessionId, options = {}) {
     const requestMemoryId = Object.hasOwn(options, "memoryId") ? options.memoryId : memoryId;
+    const mode = options.mode === "demo" ? "demo" : "live";
     const controller = new AbortController();
-    requestController.current = controller;
+    const runId = `run-${Date.now()}-${++runSequence.current}`;
+    const presenter = createRunPresenter({
+      mode,
+      reveal: (event) => {
+        setConversation((items) => updateConversationRun(
+          items,
+          runId,
+          (run) => appendRunEvent(run, event),
+        ));
+      },
+    });
+    requestController.current = { controller, presenter, runId };
     payload = {
       ...payload,
       ...(payload.message
@@ -276,11 +271,13 @@ export default function App() {
     };
     setLastRequest({ payload, requestSessionId, options });
     const farmerMessage = payload.message?.trim();
-    if (farmerMessage) {
-      setConversation((items) => [...items, { role: "farmer", text: farmerMessage }]);
-    }
+    const run = createAgentRun({ id: runId, mode, startedAt: Date.now() });
+    setConversation((items) => [
+      ...items,
+      ...(farmerMessage ? [{ role: "farmer", text: farmerMessage }] : []),
+      { role: "agent", run: run },
+    ]);
     setBusy(true);
-    setActivities([]);
     setError("");
     try {
       payload = {
@@ -295,9 +292,25 @@ export default function App() {
         signal: controller.signal,
       });
       const data = await consumeNdjsonStream(response, (event) => {
-        setActivities((items) => [...items, event]);
+        presenter.present(event);
       });
-      setConversation((items) => [...items, { role: "agent", text: assistantText(data.assistant) }]);
+      await presenter.drain();
+      await wait(600);
+      if (controller.signal.aborted) {
+        const abortError = new Error("Request cancelled.");
+        abortError.name = "AbortError";
+        throw abortError;
+      }
+      setConversation((items) => updateConversationRun(items, runId, (currentRun) => {
+        const completedRun = completeAgentRun(currentRun, {
+          answer: assistantText(data.assistant),
+          reasoningSummaries: data.reasoningSummaries ?? [],
+          completedAt: Date.now(),
+        });
+        return completedRun.status === "complete"
+          ? toggleRunCollapsed(completedRun)
+          : completedRun;
+      }));
       if (data.crops) setResult(data);
       if (requestMemoryId) {
         setSavedMemory((current) => ({
@@ -309,9 +322,21 @@ export default function App() {
       }
       setMessage("");
     } catch (err) {
-      setError(err.name === "AbortError" ? "Request cancelled. You can retry when ready." : err.message);
+      presenter.cancel();
+      const cancelled = err.name === "AbortError" || controller.signal.aborted;
+      const message = cancelled
+        ? "Request cancelled. You can retry when ready."
+        : err.message;
+      setConversation((items) => updateConversationRun(
+        items,
+        runId,
+        (currentRun) => cancelled
+          ? cancelAgentRun(currentRun, { completedAt: Date.now() })
+          : failAgentRun(currentRun, { error: message, completedAt: Date.now() }),
+      ));
+      setError(message);
     } finally {
-      if (requestController.current === controller) requestController.current = null;
+      if (requestController.current?.controller === controller) requestController.current = null;
       setBusy(false);
     }
   }
@@ -328,9 +353,8 @@ export default function App() {
     setMessage(fresh.message);
     setConversation(fresh.conversation);
     setResult(fresh.result);
-    setActivities([]);
     setError(fresh.error);
-    void send({ profilePatch: DEMO_PROFILE, startDate: planStartDate }, fresh.sessionId, { memoryId: "" });
+    void send({ profilePatch: DEMO_PROFILE, startDate: planStartDate }, fresh.sessionId, { memoryId: "", mode: "demo" });
   }
 
   async function createMemory() {
@@ -418,7 +442,8 @@ export default function App() {
   }
 
   function cancelRequest() {
-    requestController.current?.abort();
+    requestController.current?.presenter.cancel();
+    requestController.current?.controller.abort();
   }
 
   function retryLastRequest() {
@@ -471,7 +496,13 @@ export default function App() {
 
       <nav className="workflow-tabs" aria-label="Planning workspace">
         <a href="#advisor"><span>1</span>Farm advisor</a>
-        <a href={result ? "#activity" : undefined} aria-disabled={!result && !activities.length} tabIndex={result || activities.length ? undefined : -1}><span>2</span>Agent activity</a>
+        <a
+          href={latestRun ? `#agent-run-${latestRun.id}` : undefined}
+          aria-disabled={!latestRun}
+          tabIndex={latestRun ? undefined : -1}
+        >
+          <span>2</span>Agent activity
+        </a>
         <a href={result ? "#ranking" : undefined} aria-disabled={!result} tabIndex={result ? undefined : -1}><span>3</span>Crop ranking</a>
         <a href={result ? "#schedule" : undefined} aria-disabled={!result} tabIndex={result ? undefined : -1}><span>4</span>Input schedule</a>
         <a href={result ? "#roadmap" : undefined} aria-disabled={!result} tabIndex={result ? undefined : -1}><span>5</span>Season roadmap</a>
@@ -486,26 +517,38 @@ export default function App() {
         <div className="status" role="status" aria-live="polite" aria-atomic="true"><b>{status.title}</b><span>{status.detail}</span></div>
       </section>
 
-      {busy && (
-        <section className="pipeline" role="progressbar" aria-label="Live plan pipeline">
-          <div className="pipeline-track"><i /></div>
-          <b>{activities.at(-1)?.label || "Generating your grounded plan"}</b>
-          <span>Completed steps appear immediately below and remain independently expandable.</span>
-          <button type="button" className="cancel-request" onClick={cancelRequest}>Cancel request</button>
-        </section>
-      )}
-      {!busy && error && lastRequest && (
-        <button type="button" className="retry-request" onClick={retryLastRequest}>Retry last request</button>
-      )}
-
       <div className="layout" id="advisor">
         <section className="panel chat">
           <h3>Farmer conversation</h3>
-          <div className="messages">
+          <div
+            className="messages"
+            ref={messagesRef}
+            onScroll={() => {
+              const messages = messagesRef.current;
+              if (!messages) return;
+              keepMessagesPinnedRef.current =
+                messages.scrollHeight - messages.scrollTop - messages.clientHeight < 80;
+            }}
+          >
             {conversation.map((item, index) => (
               <div key={`${item.role}-${index}`} className={item.role}>
                 <b>{item.role === "agent" ? "AgriSense" : "Farmer"}</b>
-                {item.role === "agent" ? <Markdown>{item.text}</Markdown> : <p>{item.text}</p>}
+                {item.run ? (
+                  <AgentRunMessage
+                    run={item.run}
+                    onToggle={(nextRun) => setConversation((items) => updateConversationRun(
+                      items,
+                      item.run.id,
+                      () => nextRun,
+                    ))}
+                    onCancel={cancelRequest}
+                    onRetry={retryLastRequest}
+                  />
+                ) : item.role === "agent" ? (
+                  <Markdown>{item.text}</Markdown>
+                ) : (
+                  <p>{item.text}</p>
+                )}
               </div>
             ))}
           </div>
@@ -581,8 +624,6 @@ export default function App() {
         </div>
       </div>
 
-      <div id="activity"><ActivityFeed activities={activities} busy={busy} reasoningSummaries={reasoningSummaries} /></div>
-
       {result && (
         <>
           <Schedule items={result.inputSchedule} />
@@ -623,13 +664,7 @@ export default function App() {
             <section className="panel">
               <h3>Retrieved knowledge</h3>
               <p className="muted">{result.rag.totalIndexed} indexed fact cards across {result.rag.datasetCount} datasets.</p>
-              {result.knowledge.map((item) => (
-                <article className="source" key={item.id}>
-                  <a href={item.sourceUrl} target="_blank" rel="noreferrer">{item.title}</a>
-                  <small>{item.publisher} · {item.dataset} · confidence {item.confidence || "unrated"}</small>
-                  <p>{item.text}</p>
-                </article>
-              ))}
+              <EvidenceGroupList records={result.knowledge} />
             </section>
             <section className="panel">
               <h3>Visible agent trace</h3>
