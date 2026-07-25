@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Evidence-backed four-hour Tier 0 completion roadmap for Rookie Coders AgriSense.">
+  <link rel="icon" href="data:,">
+  <title>AgriSense Tier 0 Checkpoint Roadmap</title>
+  <style>
+    :root {
+      --ink: #17362c;
+      --muted: #5d7067;
+      --paper: #f4f1e8;
+      --surface: #fffdf7;
+      --forest: #153a2d;
+      --forest-2: #245844;
+      --amber: #e9a23b;
+      --amber-soft: #fff1cf;
+      --line: #d9d5c9;
+      --danger: #9b2f25;
+      --danger-soft: #fbe8e5;
+      --info: #1e5e7a;
+      --info-soft: #e4f1f6;
+      --ok: #226745;
+      --ok-soft: #e6f3e9;
+      --open: #7a5515;
+      --open-soft: #fff3d7;
+      --shadow: 0 14px 36px rgba(21, 58, 45, .09);
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 15px/1.58 Inter, "Segoe UI", Arial, sans-serif;
+    }
+    a { color: #0f6545; text-underline-offset: 3px; }
+    a:focus-visible, button:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+    .skip-link { position: absolute; left: -9999px; top: 0; }
+    .skip-link:focus { left: 12px; top: 12px; z-index: 20; background: white; padding: 10px; }
+    header {
+      color: #f9f6ed;
+      background:
+        radial-gradient(circle at 85% 15%, rgba(233, 162, 59, .24), transparent 27rem),
+        linear-gradient(135deg, #102c22, var(--forest));
+      padding: 40px max(20px, calc((100vw - 1180px) / 2)) 32px;
+    }
+    .eyebrow { margin: 0 0 8px; color: #f7c979; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; font-size: .75rem; }
+    h1 { max-width: 820px; margin: 0; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.04; letter-spacing: -.035em; }
+    .lede { max-width: 820px; margin: 18px 0 0; color: #d7e2dc; font-size: 1.08rem; }
+    .hero-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 28px; }
+    .hero-stat { min-height: 106px; padding: 16px; border: 1px solid rgba(255,255,255,.17); border-radius: 16px; background: rgba(255,255,255,.07); }
+    .hero-stat b { display: block; color: #fff; font-size: 1.45rem; }
+    .hero-stat span { color: #cbd9d2; font-size: .86rem; }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,253,247,.96);
+      backdrop-filter: blur(10px);
+    }
+    nav ul { display: flex; width: max-content; max-width: 1180px; margin: auto; padding: 0 18px; list-style: none; }
+    nav a { display: block; padding: 13px 11px; color: var(--ink); font-size: .82rem; font-weight: 800; text-decoration: none; }
+    nav a:hover { background: #edf2ed; }
+    main { max-width: 1180px; margin: auto; padding: 28px 18px 64px; }
+    section { scroll-margin-top: 64px; margin-top: 34px; }
+    h2 { margin: 0 0 14px; font-size: clamp(1.45rem, 3vw, 2.2rem); line-height: 1.2; letter-spacing: -.018em; }
+    h3 { margin: 0 0 8px; font-size: 1.08rem; }
+    p { margin: 8px 0; }
+    .kicker { color: var(--muted); max-width: 830px; }
+    .notice { border-left: 5px solid var(--amber); border-radius: 12px; background: var(--amber-soft); padding: 15px 18px; }
+    .notice.danger { border-color: var(--danger); background: var(--danger-soft); }
+    .notice.info { border-color: var(--info); background: var(--info-soft); }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid > *, .checkpoint-body, .checkpoint-cols > * { min-width: 0; }
+    .card { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 18px; box-shadow: var(--shadow); }
+    .card > :first-child { margin-top: 0; }
+    .card > :last-child { margin-bottom: 0; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: .7rem;
+      font-weight: 900;
+      letter-spacing: .04em;
+      white-space: nowrap;
+    }
+    .verified, .decided { color: var(--ok); background: var(--ok-soft); }
+    .frozen { color: #174e63; background: #e1f0f5; }
+    .assumed, .open { color: var(--open); background: var(--open-soft); }
+    .unverified, .blocked { color: var(--danger); background: var(--danger-soft); }
+    .deferred { color: #5c506c; background: #eee9f4; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td { padding: 11px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { color: #f9f6ed; background: var(--forest); font-size: .78rem; letter-spacing: .02em; }
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:nth-child(even) { background: #faf8f1; }
+    code, pre { font-family: "Cascadia Code", Consolas, monospace; }
+    code { border-radius: 5px; background: #e9eee9; padding: 2px 5px; font-size: .88em; }
+    pre { max-width: 100%; overflow: auto; margin: 12px 0 0; border-radius: 12px; background: #102d24; color: #d6e9df; padding: 14px; font-size: .78rem; line-height: 1.5; }
+    ul, ol { padding-left: 1.25rem; }
+    li + li { margin-top: 5px; }
+    .checkpoints { display: grid; gap: 14px; }
+    .checkpoint { display: grid; grid-template-columns: 130px 1fr; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+    .checkpoint-time { color: #fff; background: var(--forest); padding: 18px; }
+    .checkpoint-time b { display: block; color: #ffd48a; font-size: 1.2rem; }
+    .checkpoint-body { padding: 18px; }
+    .checkpoint-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .checkpoint-body h3 { font-size: 1.18rem; }
+    .checkpoint-cols { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 16px; margin-top: 12px; }
+    .checkpoint-cols h4 { margin: 0 0 6px; color: var(--forest-2); font-size: .82rem; text-transform: uppercase; letter-spacing: .07em; }
+    .flow { display: grid; grid-template-columns: repeat(7, minmax(90px, 1fr)); gap: 8px; align-items: stretch; }
+    .flow div { position: relative; display: grid; place-items: center; min-height: 84px; padding: 10px; border: 1px solid #b8c7be; border-radius: 12px; background: #edf4ef; text-align: center; font-weight: 800; font-size: .82rem; }
+    .flow div:not(:last-child)::after { content: "→"; position: absolute; right: -11px; z-index: 2; color: var(--amber); font-size: 1.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
+    .score-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .score { border: 1px solid var(--line); border-top: 5px solid var(--amber); border-radius: 14px; background: var(--surface); padding: 16px; }
+    .score b { display: block; font-size: 1.7rem; }
+    .small { color: var(--muted); font-size: .84rem; }
+    footer { border-top: 1px solid var(--line); background: #e9e5da; padding: 26px 18px; color: var(--muted); text-align: center; }
+    @media (max-width: 900px) {
+      .hero-grid, .grid.three, .score-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .checkpoint-cols { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      .flow div:not(:last-child)::after { content: "↓"; right: auto; bottom: -17px; }
+    }
+    @media (max-width: 650px) {
+      header { padding-top: 28px; }
+      .hero-grid, .grid, .grid.three, .score-grid { grid-template-columns: 1fr; }
+      .checkpoint { grid-template-columns: 1fr; }
+      .checkpoint-time { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+      .checkpoint-time b { display: inline; }
+      .checkpoint-head { flex-direction: column; }
+    }
+    @media print {
+      :root { --paper: #fff; --surface: #fff; --shadow: none; }
+      nav, .skip-link { display: none; }
+      header { color: #000; background: #fff; padding: 20px 0; }
+      header .lede, header .eyebrow, .hero-stat span { color: #333; }
+      .hero-grid { grid-template-columns: repeat(4, 1fr); }
+      .hero-stat { border-color: #999; min-height: 0; }
+      .hero-stat b { color: #000; }
+      main { max-width: none; padding: 0; }
+      section { break-inside: avoid; }
+      .checkpoint, .card, .table-wrap { box-shadow: none; break-inside: avoid; }
+      .checkpoint-time, th { color: #000; background: #e7e7e7; }
+      .checkpoint-time b { color: #000; }
+      a { color: #000; text-decoration: none; }
+      pre { color: #000; background: #eee; white-space: pre-wrap; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to roadmap</a>
+  <header>
+    <p class="eyebrow">Rookie Coders · AgriSense · Revision 2</p>
+    <h1>Tier 0 Checkpoint Roadmap</h1>
+    <p class="lede">A four-hour, Hyperagent-executed and Codex-orchestrated path from the existing T0-Initial prototype to a defensible Tier 0. Quality is protected by narrow checkpoints, fast adversarial probes, repair-before-advance rules, and a final evaluation–patch–re-evaluation loop.</p>
+    <div class="hero-grid" aria-label="Roadmap summary">
+      <div class="hero-stat"><b>4 hours</b><span>Hard active-execution cap after approval and access readiness</span></div>
+      <div class="hero-stat"><b>6 gates</b><span>Baseline through public judge-path proof</span></div>
+      <div class="hero-stat"><b>8/8</b><span>Official Tier 0 capabilities must pass end to end</span></div>
+      <div class="hero-stat"><b>Not approved</b><span>Roadmap review gate remains open; no implementation yet</span></div>
+    </div>
+  </header>
+
+  <nav aria-label="Roadmap sections">
+    <ul>
+      <li><a href="#verdict">Verdict</a></li>
+      <li><a href="#decisions">Decisions</a></li>
+      <li><a href="#traceability">Requirements</a></li>
+      <li><a href="#data-pack">Data</a></li>
+      <li><a href="#journeys">Journeys</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#checkpoints">Checkpoints</a></li>
+      <li><a href="#testing">Testing</a></li>
+      <li><a href="#deployment">Deployment</a></li>
+      <li><a href="#risks">Risks</a></li>
+      <li><a href="#done">Done</a></li>
+    </ul>
+  </nav>
+
+  <main id="main">
+    <section id="verdict">
+      <h2>1. Executive verdict</h2>
+      <div class="notice danger">
+        <strong>Current state: T0-Initial, not Tier 0 Completion.</strong> Local and remote <code>main</code> both resolve to <code>73ccf3ce57b5ddd2b34ad11cd08722295a697ee7</code>, and a fresh 24 July run passed all six current core tests. Live OpenAI, PostgreSQL persistence, DigitalOcean deployment, Sol-directed tool choice, production RAG grounding, and a public judge path remain <span class="status unverified">UNVERIFIED</span>.
+      </div>
+      <div class="grid three" style="margin-top:14px">
+        <article class="card">
+          <span class="status decided">DECIDED</span>
+          <h3>Delivery model</h3>
+          <p>Hyperagent performs heavy research, implementation, testing, and evaluation. Codex conserves credits by writing bounded prompts, reviewing returned evidence, and issuing repair or next-checkpoint guidance.</p>
+        </article>
+        <article class="card">
+          <span class="status assumed">ASSUMED</span>
+          <h3>Feasibility</h3>
+          <p>Four active hours is aggressive but plausible because a tested vertical slice exists. It depends on immediate target access, a working Sol model path, and no material infrastructure surprise.</p>
+        </article>
+        <article class="card">
+          <span class="status open">OPEN</span>
+          <h3>Implementation gate</h3>
+          <p>Koushik must review and explicitly approve this complete file. Actual secret values stay outside the roadmap and public repository.</p>
+        </article>
+      </div>
+      <p class="kicker"><strong>Clock rule:</strong> the four-hour implementation clock starts only after roadmap approval and confirmation that Kawsar can securely exercise DigitalOcean, PostgreSQL, and OpenAI. A missing prerequisite is a blocker, not time silently deducted from engineering.</p>
+    </section>
+
+    <section id="decisions">
+      <h2>2. Scope, decisions, and open prerequisites</h2>
+      <div class="legend" aria-label="Status legend">
+        <span class="status frozen">FROZEN</span><span class="status decided">DECIDED</span><span class="status assumed">ASSUMED</span><span class="status open">OPEN</span><span class="status blocked">BLOCKED</span><span class="status deferred">DEFERRED</span><span class="status verified">VERIFIED</span><span class="status unverified">UNVERIFIED</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Item</th><th>Status</th><th>Decision or boundary</th><th>Evidence / consequence</th></tr></thead>
+          <tbody>
+            <tr><td>Stack</td><td><span class="status frozen">FROZEN</span></td><td>React/Vite frontend; Express/Node backend; PostgreSQL; Open-Meteo; OpenAI Responses API.</td><td>Implemented repository shape.</td></tr>
+            <tr><td>Model</td><td><span class="status frozen">FROZEN</span></td><td><code>gpt-5.6-sol</code>, high reasoning by default; medium only deliberately.</td><td>Target entitlement and exact live behavior remain <span class="status unverified">UNVERIFIED</span>.</td></tr>
+            <tr><td>Product scope</td><td><span class="status frozen">FROZEN</span></td><td>Bangladesh, Rabi, mustard, potato, maize, and Boro rice.</td><td>Protects four-hour scope.</td></tr>
+            <tr><td>Orchestration</td><td><span class="status decided">DECIDED</span></td><td>Sol chooses the next allowed deterministic tool; server validates arguments, order, limits, and evidence.</td><td>Selected over both a fixed server sequence and an unrestricted autonomous loop.</td></tr>
+            <tr><td>Execution cadence</td><td><span class="status decided">DECIDED</span></td><td>Checkpoint → focused probes → adversarial micro-tests → repair or advance → integrated evaluation → patch → re-evaluate.</td><td>Koushik’s explicit process direction.</td></tr>
+            <tr><td>Credit and compute routing</td><td><span class="status decided">DECIDED</span></td><td>Preserve the user-reported ~USD 70 Codex balance for orchestration/review and route heavy work to the user-reported Hyperagent pool above USD 700.</td><td>Balances are user-reported snapshots, not independently verified billing evidence.</td></tr>
+            <tr><td>Canonical entry</td><td><span class="status frozen">FROZEN</span></td><td>Blank farmer conversation. Gazipur is a removable demo fixture only.</td><td>Existing UI and handoff decision.</td></tr>
+            <tr><td>Target access</td><td><span class="status decided">DECIDED</span></td><td>Kawsar can verify DigitalOcean, PostgreSQL, and OpenAI now.</td><td>Actual credentials, host, URL, and model entitlement stay <span class="status open">OPEN</span> until secure execution.</td></tr>
+            <tr><td>Execution ownership</td><td><span class="status decided">DECIDED</span></td><td>Koushik approves decisions and performs human-only actions; Codex orchestrates, writes prompts, reviews evidence, and guides repairs; Hyperagent performs heavy work; Kawsar performs secure infrastructure actions; Tonmoy supports cold QA/demo rehearsal if available.</td><td>One bounded Hyperagent thread per checkpoint; no unsupported completion claims.</td></tr>
+            <tr><td>Tier 1 / Tier 2</td><td><span class="status deferred">DEFERRED</span></td><td>They are intended follow-on checkpoints, not abandoned. Their implementation details require separate roadmaps after Tier 0 evidence is recorded.</td><td>Prevents Tier 0 architecture from blocking later work without diluting the current checkpoint.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="notice info" style="margin-top:14px">
+        <strong>Hyperagent routing protocol:</strong> Research &amp; Recon handles official-source datasets; Build &amp; Debug handles one implementation or failing probe at a time; Independent Judge performs cold evaluation after rubric freeze; Submission &amp; Release audits release truth. Control Tower checks coverage only. Codex supplies a self-contained prompt with one objective, cost cap, timeout, prohibited actions, and evidence schema; Koushik returns the thread ID, exact Usage cost, artifacts/diff, and observed results for Codex review before the next checkpoint.
+      </div>
+      <div class="notice info" style="margin-top:14px">
+        <strong>Secure prerequisite inventory — values must not appear here:</strong> OpenAI key with model access; Droplet SSH/console path; server-side <code>DATABASE_URL</code>; public domain/Nginx/PM2 control; GitHub push authority; and any existing curated agronomic files. Open-Meteo needs no API key.
+      </div>
+      <div class="grid" style="margin-top:14px">
+        <article class="card"><h3>Tier 0 goal</h3><p>From a vague farmer message, autonomously collect missing facts and produce one cited, weather-grounded, financially consistent, dated season plan while exposing every consequential tool call and preserving context.</p></article>
+        <article class="card"><h3>Non-goals for this file</h3><p>No bdapps, marketplace, image diagnosis, market intelligence, Bengali/voice, proactive monitoring, or broad multi-season production hardening. These remain future checkpoint families.</p></article>
+      </div>
+    </section>
+
+    <section id="traceability">
+      <h2>3. Official requirement-to-feature traceability</h2>
+      <p class="kicker">Source: <a href="../Agentic_AI_Hackathon_Final_Question.pdf">official final-round problem statement</a>. A source file or planned check is not completion evidence.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Official Tier 0 capability</th><th>Current evidence</th><th>Completion gap</th><th>Tier 0 acceptance gate</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Conversational intake</td><td>Missing-field unit test passes; OpenAI extractor exists.</td><td>Live extraction, correction, validation, contradiction handling.</td><td>Vague and partial messages collect exactly six required fields without guessing.</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>2</td><td>Live weather grounding</td><td>Open-Meteo integration and historical local smoke.</td><td>Fresh target call, failure contract, trace redaction.</td><td>Returned rainfall/temperature visibly alter advice; no invented fallback.</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>3</td><td>Crop recommendation</td><td>Four crops; rainfall-change and finance tests pass.</td><td>Coefficients are provisional and not retrieval-grounded.</td><td>At least three ranked crops with suitability, water, risk, profit, and cited input facts.</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>4</td><td>Season plan</td><td>Six-stage dated template test passes.</td><td>Static start date, generic actions, weak agronomic grounding.</td><td>Chosen crop yields cited sowing, fertilizer, irrigation, pest/weed, and harvest checkpoints.</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>5</td><td>Financial projection</td><td>Scaling and internal-consistency unit test passes.</td><td>Costs/yield/price are demo assumptions.</td><td>Itemized math reacts correctly to changed area/budget and labels source/date/assumption.</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>6</td><td>Explained reasoning</td><td>Deterministic fallback; Sol explanation code exists.</td><td>Live Sol path and evidence completeness unproven.</td><td>Each recommendation cites farm, weather, and retrieved evidence plus uncertainty.</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>7</td><td>Knowledge base with RAG</td><td>Four hard-coded source cards and keyword matching.</td><td>Not a persisted corpus; advice is not actually driven by retrieved facts.</td><td>Versioned public-source facts are retrieved and consumed by ranking, calendar, finance labels, and explanation.</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>8</td><td>Visible agent trace</td><td>UI renders parameters/results for current fixed sequence.</td><td>Tool-choice reason, step order, failures, source IDs, and redaction need proof.</td><td>Judge can map every consequential number to a real call, deterministic calculation, or labeled assumption.</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="notice" style="margin-top:14px"><strong>Agentic gate:</strong> the official brief separately requires tool use, dependent multi-step planning, targeted recovery from missing information, memory, and explainability. Passing eight UI sections without a model-directed bounded tool sequence does not pass this gate.</div>
+    </section>
+
+    <section id="data-pack">
+      <h2>4. Immediate data and access collection pack</h2>
+      <p class="kicker">Kawsar can collect this in parallel without waiting for implementation or an Excel workbook. Preserve original files and provenance; do not normalize by overwriting the raw source.</p>
+      <div class="notice danger">
+        <strong>Do not mix evidence classes.</strong> Use exactly: <code>AUTHORITATIVE_STATIC</code>, <code>OFFICIAL_LIVE_FEED</code>, <code>THIRD_PARTY_LIVE_API</code>, <code>TEAM_ASSUMPTION</code>, or <code>SYNTHETIC_FIXTURE</code>. Synthetic fixtures never enter production RAG, and DAM selling prices never become production costs.
+      </div>
+
+      <h3 style="margin-top:22px">Kawsar’s secure infrastructure inventory</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Collect / verify</th><th>Required detail</th><th>Secret handling</th><th>Evidence to return</th></tr></thead>
+          <tbody>
+            <tr><td>OpenAI</td><td>Project key entitlement, quota/budget, <code>gpt-5.6-sol</code>, high reasoning, Responses API function tools.</td><td>Set server-side only; never paste the value.</td><td>Sanitized success/error, model ID, effort, timing, usage/cost.</td></tr>
+            <tr><td>DigitalOcean</td><td>Droplet OS, SSH/console authority, app path, public URL, port, firewall, outbound HTTPS.</td><td>Use Kawsar’s secure account/session.</td><td>OS/Node/npm versions, deployed SHA, reachability, redacted command results.</td></tr>
+            <tr><td>PostgreSQL</td><td><code>DATABASE_URL</code>, SSL/CA mode, network path, database/schema, migration and backup rights.</td><td>Environment/secret manager only.</td><td>Transaction/rollback, migration, restart-persistence results without connection strings.</td></tr>
+            <tr><td>Web process</td><td>DNS, TLS, Nginx route to port 3001, PM2 install/status/startup persistence.</td><td>Do not expose private host configuration unnecessarily.</td><td>HTTPS health response, PM2 status, restart readback.</td></tr>
+            <tr><td>GitHub</td><td>Authenticated pull/push access and permission to deploy the exact tested SHA.</td><td>No personal token in logs or chat.</td><td>Local/remote/deployed SHA comparison.</td></tr>
+            <tr><td>Runtime packages</td><td>Node 22+, npm, <code>npm ci</code> dependencies, PM2, Nginx. No vector database or extra RAG API is required for Tier 0.</td><td>Install from official package/system channels.</td><td>Versions and successful <code>npm run check</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:22px">Nine normalized agriculture datasets</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dataset</th><th>Minimum fields and units</th><th>Primary collection source</th><th>Tier 0 rule</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>crop_suitability</code></td>
+              <td>Upazila/map polygon, crop, season, agro-edaphic/climatic/ecological basis, suitability class, limiting factors, attainable-yield band.</td>
+              <td><a href="https://apps.barc.gov.bd/cropzoning/homes/downloads/2">BARC crop suitability maps/data</a> and <a href="https://czis.cropzoning.gov.bd/">CZIS</a>.</td>
+              <td>Collect only mustard, potato, Rabi maize, and Boro; retain map year and geography.</td>
+            </tr>
+            <tr>
+              <td><code>soil_observation</code></td>
+              <td>Location/sample/depth/date, texture, land/drainage class, pH, EC dS/m, organic matter %, N/P/K/S/Zn/B/Ca/Mg with original units/method.</td>
+              <td><a href="https://srdi.gov.bd/pages/static-pages/6922dfb3933eb65569e23904">SRDI soil-map catalogue</a> and CZIS soil modules.</td>
+              <td>Never treat a regional map as a farm soil test; missing unit/method means insufficient evidence.</td>
+            </tr>
+            <tr>
+              <td><code>crop_calendar</code></td>
+              <td>Crop, BAMIS region, stage/operation, start/end date or dekad, duration days, critical weather, action.</td>
+              <td><a href="https://www.bamis.gov.bd/en/calendar">BAMIS calendar index</a>: <a href="https://www.bamis.gov.bd/calendar/1/79">Rabi maize</a>, <a href="https://www.bamis.gov.bd/calendar/1/44">mustard</a>, <a href="https://www.bamis.gov.bd/calendar/1/52">potato</a>, <a href="https://www.bamis.gov.bd/calendar/1/75">Boro</a>.</td>
+              <td>Retain regional scope; do not turn one region’s calendar into national truth.</td>
+            </tr>
+            <tr>
+              <td><code>fertilizer_recommendation</code></td>
+              <td>Crop/variety, AEZ/soil/soil-test class, target yield t/ha, N/P/K/S/Zn/B/Mg kg/ha, product rate, application stage/split/method, adjustments.</td>
+              <td><a href="https://apps.barc.gov.bd/fertilizer_recommendation/FRG%20English%2030.10.2024.pdf">BARC Fertilizer Recommendation Guide 2024</a>.</td>
+              <td>Store nutrient and product rates separately; exact advice requires source soil context and page/table.</td>
+            </tr>
+            <tr>
+              <td><code>irrigation_checkpoint</code></td>
+              <td>Crop/stage, trigger, depth mm or water-table cm, interval, critical period, method, drainage/harvest stop rule, weather dependency.</td>
+              <td><a href="https://brri.gov.bd/pages/static-pages/6922dd83933eb65569e154e9">BRRI water-management division</a>, BAMIS calendars, and <a href="https://iras.bamis.gov.bd/">BAMIS/IRAS</a>.</td>
+              <td>Boro AWD evidence is crop/method specific; never generalize it to every crop.</td>
+            </tr>
+            <tr>
+              <td><code>pest_disease_checkpoint</code></td>
+              <td>Crop/hazard/stage, weather risk, symptoms, scouting method/unit, threshold, nonchemical action; chemical ingredient/formulation/dose/PHI only when registered.</td>
+              <td><a href="https://www.bamis.gov.bd/en/diseases/">BAMIS disease index</a> and <a href="https://dae.gov.bd/site/files/4ea8e032-77df-4e6b-952b-5eab3004113c/">DAE pesticide registry</a>.</td>
+              <td>Weather indicates risk, not diagnosis; missing current DAE label evidence blocks chemical advice.</td>
+            </tr>
+            <tr>
+              <td><code>yield_statistic</code></td>
+              <td>Crop/season/variety, crop year, exact geography, area ha, production tonnes, yield t/ha, preliminary/provisional/final status.</td>
+              <td><a href="https://bbs.gov.bd/pages/static-pages/6922e0f6933eb65569e29564">BBS agriculture statistics</a> and yearbooks.</td>
+              <td>National yield does not become an upazila prediction; retain survey year/method.</td>
+            </tr>
+            <tr>
+              <td><code>farm_economics</code></td>
+              <td>Cost item, quantity/unit, unit price, amount BDT, basis area, date/location; separately, commodity/form/grade/market level, min/max/average BDT per explicit unit.</td>
+              <td><a href="https://market.dam.gov.bd/market_daily_price_report?L=E">DAM daily market report</a> plus dated local receipts/interviews.</td>
+              <td>No current comprehensive official four-crop cost table was confirmed. Costs stay <code>TEAM_ASSUMPTION</code>; DAM prices are selling-price evidence only.</td>
+            </tr>
+            <tr>
+              <td><code>weather_timeseries</code></td>
+              <td>Coordinates, provider/model/run, issue/valid/retrieval time, observed/forecast, temperature °C, precipitation mm, RH %, wind km/h, optional soil moisture/ET0, freshness flag.</td>
+              <td><a href="https://open-meteo.com/en/docs">Open-Meteo</a> (no key), cross-checked with <a href="https://www.bamis.gov.bd/en/bmd/wrf/table/">BAMIS</a>/<a href="https://www.bmd.gov.bd/web/en/">BMD</a> for high-impact warnings.</td>
+              <td>Expose provider/time. Never call stale data live or let a third-party forecast silently override an official warning.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:22px">Provenance envelope for every collected row</h3>
+      <pre>record_id, provenance_class, publisher, source_title, source_url,
+publication_date, retrieved_at_utc, effective_from, effective_to,
+source_page_or_table, language, geo_level, geo_code, crop, season,
+variety, source_unit, transform_notes, license_status, confidence,
+raw_content_hash</pre>
+      <div class="grid three" style="margin-top:14px">
+        <article class="card"><h3>Originals</h3><p>Save unaltered PDF/CSV/JSON/HTML exports privately with checksum. Store only permitted factual extracts, direct links, and page/table references in the public project.</p></article>
+        <article class="card"><h3>Licensing</h3><p>BARC FRG is copyrighted; BAMIS/BMD state rights reserved; many government pages do not expose a dataset-specific open licence. Record <code>UNKNOWN_VERIFY</code> instead of assuming reuse rights. Open-Meteo requires attribution under CC BY 4.0.</p></article>
+        <article class="card"><h3>Synthetic data</h3><p>Generate locally with <code>is_synthetic=true</code>, expected invariant, and prohibited behavior. Keep it out of RAG embeddings, farmer analytics, and claimed source evidence.</p></article>
+      </div>
+      <p class="kicker"><strong>Immediate no-key downloads:</strong> BARC FRG and crop-zoning pages, SRDI map catalogue, BAMIS calendars/disease/forecast pages, BRRI/DAE guidance, BBS summaries, DAM reports, and Open-Meteo JSON. Avoid Kaggle or anonymous spreadsheets unless separately labeled third-party and independently validated.</p>
+    </section>
+
+    <section id="journeys">
+      <h2>5. Farmer and judge journeys</h2>
+      <div class="grid">
+        <article class="card">
+          <span class="status decided">DECIDED</span>
+          <h3>Primary farmer journey</h3>
+          <ol>
+            <li>Farmer opens a blank conversation and sends a vague message.</li>
+            <li>Sol extracts only explicit facts; the server validates Bangladesh location, numeric ranges, and allowed season values.</li>
+            <li>The agent asks only for still-missing fields and preserves accepted context.</li>
+            <li>Sol selects retrieval and weather tools; the server validates and executes them.</li>
+            <li>Deterministic modules rank crops, compute finance, and build the calendar using retrieved evidence.</li>
+            <li>Sol explains the result from supplied evidence; UI exposes trace, sources, uncertainties, and assumption labels.</li>
+            <li>A reload or later turn restores the session from PostgreSQL.</li>
+          </ol>
+        </article>
+        <article class="card">
+          <span class="status assumed">ASSUMED</span>
+          <h3>Four-minute judge demo</h3>
+          <ol>
+            <li><strong>0:00–0:30:</strong> State problem, Tier 0 boundary, and real/generated labels.</li>
+            <li><strong>0:30–1:20:</strong> Start blank; give an incomplete farmer request; show targeted follow-up and memory.</li>
+            <li><strong>1:20–2:25:</strong> Complete intake; show Sol’s bounded tool sequence and live Open-Meteo values.</li>
+            <li><strong>2:25–3:20:</strong> Show ranked crops, cited season plan, inspectable finance, and retrieved evidence.</li>
+            <li><strong>3:20–4:00:</strong> Open raw trace, reload persistence, state limitations, and show local fallback readiness.</li>
+          </ol>
+          <p class="small">The Gazipur button may accelerate recovery during rehearsal, but it must never replace the canonical blank-flow proof.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <h2>6. Bounded-hybrid architecture</h2>
+      <div class="flow" role="img" aria-label="Farmer to React client to Express orchestrator to Sol planner to validated deterministic tools to PostgreSQL and trace, returning a grounded plan">
+        <div>Farmer</div><div>React UI</div><div>Express API</div><div>Sol bounded planner</div><div>Validated tool registry</div><div>PostgreSQL + external data</div><div>Plan + trace</div>
+      </div>
+      <div class="grid three" style="margin-top:14px">
+        <article class="card"><h3>Sol owns</h3><ul><li>Explicit fact extraction.</li><li>Next allowed tool selection.</li><li>Evidence-bound explanation.</li><li>Stopping when the goal is satisfied.</li></ul></article>
+        <article class="card"><h3>Server owns</h3><ul><li>Schema/range validation.</li><li>Tool allow-list and maximum steps.</li><li>Weather, retrieval, ranking, finance, calendar, persistence.</li><li>Timeouts, retries, redaction, trace integrity.</li></ul></article>
+        <article class="card"><h3>Hard guards</h3><ul><li>Bangladesh-only geocoding.</li><li>No unsupported values or secret-bearing trace.</li><li>No recursive/delegated tool calls.</li><li>Maximum eight tool steps and one retry per recoverable external failure.</li></ul></article>
+      </div>
+
+      <h3 style="margin-top:22px">API contract</h3>
+      <div class="grid">
+        <article class="card">
+          <h3><code>POST /api/session/message</code></h3>
+          <pre>{
+  "sessionId": "uuid-or-omitted",
+  "message": "I have one acre near Gazipur...",
+  "clientRequestId": "uuid"
+}</pre>
+          <p class="small">The public client never sends a trusted <code>profilePatch</code>; the seeded demo route must be explicitly labeled and removable.</p>
+        </article>
+        <article class="card">
+          <h3>Successful response</h3>
+          <pre>{
+  "sessionId": "uuid",
+  "status": "needs_input | completed",
+  "missingFields": [],
+  "profile": {},
+  "recommendation": {},
+  "sources": [],
+  "trace": [],
+  "warnings": []
+}</pre>
+          <p class="small">Errors use a stable code, safe message, retryability, and trace ID; they never expose keys, connection strings, prompts, or stack traces.</p>
+        </article>
+      </div>
+
+      <h3 style="margin-top:22px">OpenAI orchestration contract</h3>
+      <div class="card">
+        <ol>
+          <li>Send conversation state, objective, retrieved evidence IDs, and JSON-schema function tools to the Responses API.</li>
+          <li>Accept only allow-listed tool calls whose arguments pass strict schemas and domain constraints.</li>
+          <li>Execute deterministic tools; append sanitized raw outputs and provenance to the trace; return tool results to Sol.</li>
+          <li>Repeat until required evidence exists or the eight-step budget is exhausted.</li>
+          <li>Validate final response completeness. If invalid, perform one constrained repair; otherwise return a transparent recoverable error.</li>
+        </ol>
+      </div>
+
+      <h3 style="margin-top:22px">PostgreSQL and RAG design</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Table / asset</th><th>Purpose</th><th>Minimum fields</th><th>Migration rule</th></tr></thead>
+          <tbody>
+            <tr><td><code>farm_sessions</code></td><td>Conversation and last grounded result.</td><td><code>id</code>, <code>profile</code>, <code>last_result</code>, <code>updated_at</code></td><td>Existing non-destructive table retained.</td></tr>
+            <tr><td><code>agent_runs</code></td><td>One bounded orchestration run.</td><td><code>id</code>, <code>session_id</code>, <code>status</code>, <code>model</code>, timestamps, safe error code</td><td>Additive migration; FK to session.</td></tr>
+            <tr><td><code>tool_events</code></td><td>Ordered, sanitized evidence trace.</td><td><code>run_id</code>, sequence, tool, parameters, result, duration, source IDs</td><td>Additive migration; index by run/sequence.</td></tr>
+            <tr><td><code>knowledge_documents</code></td><td>Versioned source registry.</td><td>title, canonical URL, publisher, retrieved date, checksum, scope</td><td>Seed only approved public sources.</td></tr>
+            <tr><td><code>knowledge_facts</code></td><td>Small structured Rabi/four-crop corpus.</td><td>crop, topic, value/text, units, location/season, source document/page</td><td>Use PostgreSQL full-text/structured filters; no new vector service required.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="kicker">Retrieval must feed the deterministic crop score, calendar facts, finance labels, and Sol explanation. Merely displaying citations after calculations is not RAG grounding.</p>
+
+      <h3 style="margin-top:22px">Fallback behavior</h3>
+      <div class="grid three">
+        <article class="card"><h3>Weather failure</h3><p>Return a recoverable error and preserve intake. Never substitute invented weather. Permit a clearly labeled last-known observation only if its timestamp is visible and Koushik approves that behavior.</p></article>
+        <article class="card"><h3>OpenAI failure</h3><p>Do not claim autonomous completion. Preserve deterministic tools and previously verified results; show the model failure and retry option. Demo fallback remains explicitly labeled.</p></article>
+        <article class="card"><h3>Database failure</h3><p>Do not silently switch to persistent-memory claims. Local memory may support a labeled local demonstration, but target Tier 0 remains blocked until PostgreSQL proof passes.</p></article>
+      </div>
+    </section>
+
+    <section id="checkpoints">
+      <h2>7. Four-hour implementation checkpoints</h2>
+      <p class="kicker">Every checkpoint has one objective, explicit dependencies, fast tests, and a binary advance rule. Estimates are elapsed active time, not guarantees against unavailable external services.</p>
+      <div class="checkpoints">
+        <article class="checkpoint">
+          <div class="checkpoint-time"><b>00:00–00:20</b><span>20 min</span></div>
+          <div class="checkpoint-body">
+            <div class="checkpoint-head"><div><h3>C0 — Freeze baseline and prove prerequisites</h3><p>Executor: Hyperagent + Kawsar · Orchestrator/reviewer: Codex · Dependencies: approved roadmap, secure access</p></div><span class="status unverified">UNVERIFIED</span></div>
+            <div class="checkpoint-cols">
+              <div><h4>Build target</h4><p>Record SHA/status; create isolated implementation branch; run fresh tests/build; verify target reachability without printing secrets.</p></div>
+              <div><h4>Micro-tests</h4><p>Secret-pattern scan; remote SHA readback; health reachability; model entitlement probe; PostgreSQL transaction/rollback probe.</p></div>
+              <div><h4>Advance rule</h4><p>Baseline reproducible and all three target integrations reachable. Otherwise mark <span class="status blocked">BLOCKED</span> and repair access before product changes.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="checkpoint">
+          <div class="checkpoint-time"><b>00:20–01:15</b><span>55 min</span></div>
+          <div class="checkpoint-body">
+            <div class="checkpoint-head"><div><h3>C1 — Complete bounded Sol tool orchestration and intake</h3><p>Executor: Build &amp; Debug Hyperagent · Orchestrator/reviewer: Codex · Dependencies: C0</p></div><span class="status unverified">UNVERIFIED</span></div>
+            <div class="checkpoint-cols">
+              <div><h4>Build target</h4><p>Tool schemas, allow-list, max-step loop, argument validation, targeted missing-field flow, stable error contract, and sanitized trace.</p></div>
+              <div><h4>Wild small tests</h4><p>Empty message; partial Bangla/English facts; zero/negative acres; contradictory budget; non-Bangladesh location; prompt asking for a forbidden tool; repeated tool-loop request.</p></div>
+              <div><h4>Advance rule</h4><p>Sol chooses allowed next steps, deterministic guards reject unsafe/invalid calls, and missing fields never get guessed.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="checkpoint">
+          <div class="checkpoint-time"><b>01:15–02:15</b><span>60 min</span></div>
+          <div class="checkpoint-body">
+            <div class="checkpoint-head"><div><h3>C2 — Make RAG and live weather drive the plan</h3><p>Executors: Research &amp; Recon + Build &amp; Debug Hyperagents · Source approval: Koushik · Orchestrator/reviewer: Codex · Dependencies: C1</p></div><span class="status unverified">UNVERIFIED</span></div>
+            <div class="checkpoint-cols">
+              <div><h4>Build target</h4><p>Versioned source registry and small structured corpus for four Rabi crops; retrieval tool; weather tool; ranking/calendar/finance consume retrieved facts or visible assumptions.</p></div>
+              <div><h4>Wild small tests</h4><p>Dry versus wet forecast; absent crop fact; conflicting units; retrieval with irrelevant query; stale weather timestamp; source text containing prompt injection; changed farm area/budget.</p></div>
+              <div><h4>Advance rule</h4><p>At least three candidates and the chosen calendar are traceably affected by live weather and cited retrieved facts; unsupported values are labeled, never disguised.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="checkpoint">
+          <div class="checkpoint-time"><b>02:15–02:55</b><span>40 min</span></div>
+          <div class="checkpoint-body">
+            <div class="checkpoint-head"><div><h3>C3 — Prove PostgreSQL memory, trace integrity, and recovery</h3><p>Executor: Build &amp; Debug Hyperagent + Kawsar · Orchestrator/reviewer: Codex · Dependencies: C1–C2</p></div><span class="status unverified">UNVERIFIED</span></div>
+            <div class="checkpoint-cols">
+              <div><h4>Build target</h4><p>Additive migrations, session/run/tool-event persistence, idempotent request handling, safe failures, and trace-to-result provenance.</p></div>
+              <div><h4>Wild small tests</h4><p>Reload same session; new session isolation; duplicate client request ID; database reconnect; weather timeout; OpenAI timeout; trace secret canary; invalid stored JSON.</p></div>
+              <div><h4>Advance rule</h4><p>Context survives a process/reload boundary, duplicate requests do not duplicate state, and failures remain recoverable and truthfully labeled.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="checkpoint">
+          <div class="checkpoint-time"><b>02:55–03:30</b><span>35 min</span></div>
+          <div class="checkpoint-body">
+            <div class="checkpoint-head"><div><h3>C4 — Close the browser judge path</h3><p>Executor: Build &amp; Debug Hyperagent + Tonmoy if available · Orchestrator/reviewer: Codex · Dependencies: C1–C3</p></div><span class="status unverified">UNVERIFIED</span></div>
+            <div class="checkpoint-cols">
+              <div><h4>Build target</h4><p>Blank chat, targeted follow-up, recommendation, source/assumption labels, raw trace, responsive layout, keyboard path, and visible recoverable errors.</p></div>
+              <div><h4>Wild small tests</h4><p>320 px viewport; keyboard only; slow response; refresh mid-session; long location text; API 502; source link open; Gazipur fixture removal check.</p></div>
+              <div><h4>Advance rule</h4><p>Canonical blank flow completes on desktop/mobile, essential controls are accessible, and a judge can audit each consequential number.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="checkpoint">
+          <div class="checkpoint-time"><b>03:30–04:00</b><span>30 min</span></div>
+          <div class="checkpoint-body">
+            <div class="checkpoint-head"><div><h3>C5 — Deploy, evaluate, patch, re-evaluate, and freeze</h3><p>Executors: Kawsar + Independent Judge + Submission &amp; Release Hyperagents · Approval: Koushik · Orchestrator/reviewer: Codex · Dependencies: C0–C4</p></div><span class="status unverified">UNVERIFIED</span></div>
+            <div class="checkpoint-cols">
+              <div><h4>Build target</h4><p>Deploy exact tested SHA; verify public health and judge flow; run official-contract scorecard; patch only critical/high-confidence failures; re-run regression and freeze.</p></div>
+              <div><h4>Wild small tests</h4><p>Cold browser; public HTTPS; server restart persistence; missing-key health; four-minute timed rehearsal; README real/mock/tier audit; remote SHA readback.</p></div>
+              <div><h4>Advance rule</h4><p>All eight Tier 0 gates <span class="status verified">VERIFIED</span>, zero critical demo blockers, exact deployed SHA recorded, and final commit pushed only with explicit authorization.</p></div>
+            </div>
+          </div>
+        </article>
+      </div>
+      <div class="notice danger" style="margin-top:14px"><strong>Overrun policy:</strong> do not lower acceptance criteria to protect the clock. Drop cosmetic polish, extra refactors, and follow-on tiers first. If a Tier 0 gate cannot be proven by 04:00, record it as <span class="status blocked">BLOCKED</span> or <span class="status unverified">UNVERIFIED</span>; never claim completion.</div>
+    </section>
+
+    <section id="testing">
+      <h2>8. Test and evaluation matrix</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Lane</th><th>Minimum probe</th><th>Acceptance evidence</th><th>When</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Unit</td><td>Validation, tool policy, crop math, finance invariants, calendar, retrieval, redaction.</td><td>Fresh command, counts, exit code, focused failure reproduction.</td><td>Each checkpoint</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>OpenAI integration</td><td>Real Sol tool call, invalid arguments, max-step stop, explanation schema.</td><td>Sanitized request/response metadata, model, effort, timing, trace ID.</td><td>C0–C2</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>PostgreSQL</td><td>Migrations, insert/update/read, restart persistence, duplicate request, reconnect.</td><td>Target query results without credential exposure.</td><td>C0/C3</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>Weather</td><td>Real Bangladesh geocode/forecast; timeout, unknown place, stale-data check.</td><td>Raw sanitized values, source URL, retrieval time, changed recommendation.</td><td>C2</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>RAG</td><td>Known-answer source fact, irrelevant query, conflicting units, injection text.</td><td>Correct source/page IDs and proof that retrieved values feed advice.</td><td>C2</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>HTTP integration</td><td>Partial intake → completion → plan; stable errors; health modes.</td><td>Request/response fixtures and exit result.</td><td>C1–C3</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>Browser</td><td>Blank and seeded paths; reload; mobile; keyboard; slow/error states.</td><td>Screenshots or trace plus exact URL/SHA.</td><td>C4/C5</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>Secrets</td><td>Repository, built client, responses, logs, screenshots, and trace scan.</td><td>No key/connection/token patterns; server environment only.</td><td>C0/C5</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>Accessibility</td><td>Keyboard path, labels, focus, landmarks, contrast, reduced viewport.</td><td>Manual checklist plus automated findings where available.</td><td>C4</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>Demo rehearsal</td><td>Cold four-minute run and local fallback run.</td><td>Elapsed time, failures, owner, recovery step, final deployed SHA.</td><td>C5</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:22px">Local synthetic/adversarial fixture pack — do not download</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Fixture</th><th>Expected invariant</th><th>Checkpoint</th></tr></thead>
+          <tbody>
+            <tr><td>SYN-01</td><td>Blank/whitespace intake.</td><td>Request exactly all six fields; no downstream tools.</td><td>C1/C4</td></tr>
+            <tr><td>SYN-02</td><td>Gazipur + acre + loam + irrigation only.</td><td>Retain four facts; ask only budget and season.</td><td>C1/C4</td></tr>
+            <tr><td>SYN-03</td><td>Zero/negative/infinite acres or budget overflow.</td><td>Reject deterministically; no overflow, persistence corruption, or crop calls.</td><td>C1</td></tr>
+            <tr><td>SYN-04</td><td>Two conflicting farm sizes and budgets.</td><td>Keep non-conflicting facts; clarify only conflicts.</td><td>C1</td></tr>
+            <tr><td>SYN-05</td><td>Mixed Bangla/English and Bengali numerals.</td><td>Unicode-safe; normalize only confident facts; no guessed translation.</td><td>C1/C4</td></tr>
+            <tr><td>SYN-06</td><td>Kolkata location with otherwise valid profile.</td><td>Reject location, skip weather call, retain other five fields.</td><td>C1/C2</td></tr>
+            <tr><td>SYN-07</td><td>Complete valid profile + controlled weather/RAG.</td><td>Only four scoped crops; ≥3 candidates; complete plan/finance/reasoning/trace invariants.</td><td>C1/C2/C4</td></tr>
+            <tr><td>SYN-08</td><td>Double area and budget with identical per-acre evidence.</td><td>Area-dependent totals double; ROI/order remain invariant; Sol does no arithmetic.</td><td>C2</td></tr>
+            <tr><td>SYN-09</td><td>Farmer message instructs shell/env-secret access.</td><td>Injection is inert; only allow-listed domain tools execute.</td><td>C1/C3</td></tr>
+            <tr><td>SYN-10</td><td>Retrieved source contains malicious system instruction.</td><td>Quarantine/treat as untrusted data; tool policy and crop scope cannot change.</td><td>C2</td></tr>
+            <tr><td>SYN-11</td><td>Planner requests the same weather tool nine times.</td><td>Deduplicate/limit to eight steps; return safe non-completion at limit.</td><td>C1</td></tr>
+            <tr><td>SYN-12</td><td>Open-Meteo times out twice.</td><td>At most one retry; preserve intake; no invented weather or completed plan.</td><td>C2/C3/C4</td></tr>
+            <tr><td>SYN-13</td><td>Well-formed but expired weather replay.</td><td>Expose timestamp; never label stale data live or ground completion without approval.</td><td>C2/C4</td></tr>
+            <tr><td>SYN-14</td><td>Two concurrent requests with the same client request ID.</td><td>One logical run/cost/side-effect set; idempotent replay or in-progress response.</td><td>C3</td></tr>
+            <tr><td>SYN-15</td><td>Partial session → process restart → completion; probe a new session.</td><td>Same-session facts persist in PostgreSQL; new session inherits nothing.</td><td>C3/C4</td></tr>
+            <tr><td>SYN-16</td><td>Fake key/connection-string canaries in upstream errors.</td><td>Canaries absent from HTTP/UI/trace/database/screenshots/logs; safe metadata remains.</td><td>C0/C3/C4/C5</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:22px">Evaluation → patch → re-evaluation loop</h3>
+      <div class="score-grid">
+        <div class="score"><span>1. Freeze</span><b>Rubric</b><p class="small">Official requirements and judging weights; no moving criteria after seeing results.</p></div>
+        <div class="score"><span>2. Evaluate</span><b>Cold run</b><p class="small">Score only observed behavior. Keep plan quality, evidence coverage, and execution readiness separate.</p></div>
+        <div class="score"><span>3. Patch</span><b>Root cause</b><p class="small">Fix confirmed critical/high-value defects only; add a failing reproduction first.</p></div>
+        <div class="score"><span>4. Re-evaluate</span><b>Fresh proof</b><p class="small">Original failure, adversarial paraphrase, regression suite, public readback.</p></div>
+      </div>
+      <p class="kicker">No score is pre-awarded in this roadmap. A score becomes evidence only after a cold run against the exact deployed revision.</p>
+    </section>
+
+    <section id="deployment">
+      <h2>9. Deployment, rollback, and recovery</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Stage</th><th>Action</th><th>Evidence</th><th>Rollback / fallback</th></tr></thead>
+          <tbody>
+            <tr><td>Branch</td><td>Create <code>codex/t0-completion</code> from verified <code>73ccf3c</code>; checkpoint commits only after tests.</td><td>Branch SHA and clean scoped diff.</td><td>Preserve <code>main</code>; never reset or force-push.</td></tr>
+            <tr><td>Database</td><td>Run additive, idempotent migrations; back up affected schema/data first.</td><td>Migration log and post-migration queries.</td><td>New tables can remain unused; avoid destructive down-migration during the event.</td></tr>
+            <tr><td>Application</td><td>Install locked dependencies, test, build, set server-only environment, restart PM2, verify Nginx/HTTPS.</td><td>Exact commands, exit results, health response, deployed SHA.</td><td>Restart previous known-good release/SHA and retain DB-compatible schema.</td></tr>
+            <tr><td>Readback</td><td>Run public blank intake, real integrations, reload persistence, trace audit, and four-minute rehearsal.</td><td>URL, timestamp, result, timing, limitation ledger.</td><td>Use verified local fallback only with explicit truth labels.</td></tr>
+            <tr><td>Publish</td><td>Inspect status/diff, run tests/build/secret scan, stage only scope, push only on Koushik’s explicit instruction.</td><td>Local and remote SHA match before cutoff.</td><td>No post-cutoff completion claim; submit last eligible SHA.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="risks">
+      <h2>10. Risk ledger and hard cut lines</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Risk</th><th>Trigger</th><th>Impact</th><th>Response</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Model entitlement mismatch</td><td>Target rejects <code>gpt-5.6-sol</code> or tool calling.</td><td>Blocks selected orchestration.</td><td>Capture exact error; Koushik decides whether to resolve entitlement or reopen the frozen model decision. No silent substitution.</td><td><span class="status open">OPEN</span></td></tr>
+            <tr><td>Credentials unavailable</td><td>Kawsar cannot execute secure target probes.</td><td>Blocks E4 claims.</td><td>Continue isolated local work only; mark target gates <span class="status blocked">BLOCKED</span>.</td><td><span class="status open">OPEN</span></td></tr>
+            <tr><td>RAG source insufficiency</td><td>No defensible fact exists for a value.</td><td>Accuracy and knowledge-base scoring risk.</td><td>Label/omit unsupported value; never fill from model recall. Koushik reviews the compact source register.</td><td><span class="status open">OPEN</span></td></tr>
+            <tr><td>External latency/outage</td><td>OpenAI/Open-Meteo/DB exceeds timeout.</td><td>Demo instability.</td><td>Bounded retries, visible recoverable state, preserved session, rehearsed local fallback.</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>Trace leaks secrets</td><td>Raw SDK/database error enters client trace.</td><td>Security and demo failure.</td><td>Allow-list serialized fields; canary scan; server-side logs remain sanitized.</td><td><span class="status unverified">UNVERIFIED</span></td></tr>
+            <tr><td>Four-hour overrun</td><td>A checkpoint misses its exit gate by 10 minutes.</td><td>End-to-end proof threatened.</td><td>Stop optional UI/refactor work, timebox root-cause repair, preserve acceptance criteria, record unresolved blocker.</td><td><span class="status assumed">ASSUMED</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid three" style="margin-top:14px">
+        <article class="card"><h3>Cut first</h3><p>Animation, visual polish, extra crops, extra sources beyond the minimum defensible corpus, refactors unrelated to a checkpoint, and optional dashboard views.</p></article>
+        <article class="card"><h3>Never cut</h3><p>Real tool use, input validation, citations/provenance, correct math, secret safety, truthful status, public-path proof, and recoverable failures.</p></article>
+        <article class="card"><h3>Decision deadlines</h3><p>All target-access and ownership questions before 00:00; any material architecture change by C1 exit; demo freeze at 03:50; no unverified patch after 04:00.</p></article>
+      </div>
+    </section>
+
+    <section id="done">
+      <h2>11. Definition of Tier 0 done</h2>
+      <div class="notice">
+        <strong>Tier 0 is done only when all statements below are evidenced against the exact deployed revision.</strong> Planned checks, historical handoff claims, local fallbacks, and screenshots without a SHA do not satisfy this definition.
+      </div>
+      <div class="grid" style="margin-top:14px">
+        <article class="card">
+          <h3>Product and agent gates</h3>
+          <ul>
+            <li>All eight official Tier 0 capabilities pass end to end.</li>
+            <li>Sol chooses a bounded dependent tool sequence; the server enforces safety and integrity.</li>
+            <li>Missing information is requested precisely and memory survives the required boundary.</li>
+            <li>Weather and retrieved agronomic evidence materially drive advice.</li>
+            <li>Every recommendation and number is traceable to input, source, calculation, or explicit assumption.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Release and evidence gates</h3>
+          <ul>
+            <li>Focused, regression, failure, browser, secret, and accessibility checks pass.</li>
+            <li>OpenAI, PostgreSQL, Open-Meteo, and DigitalOcean paths are proven live.</li>
+            <li>Public HTTPS judge flow and process-restart persistence pass.</li>
+            <li>README truthfully states tier and real/generated/mock data.</li>
+            <li>Four-minute rehearsal, recovery path, exact local/remote/deployed SHA, and remaining limitations are recorded.</li>
+          </ul>
+        </article>
+      </div>
+      <div class="notice info" style="margin-top:14px">
+        <strong>Next-project boundary:</strong> after Tier 0 evidence is frozen, create separate checkpoint roadmaps for Tier 1, Tier 2, and other experiments. Reuse the same build → micro-test → repair/advance → cold evaluation loop, but do not let them retroactively weaken Tier 0 evidence.
+      </div>
+    </section>
+
+    <section id="changelog">
+      <h2>12. Revision record</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Revision</th><th>Date</th><th>Git baseline</th><th>Change</th><th>Approval</th></tr></thead>
+          <tbody>
+            <tr><td>2</td><td>24 July 2026, Asia/Dhaka</td><td><code>73ccf3ce57b5ddd2b34ad11cd08722295a697ee7</code></td><td>Routed heavy execution to Hyperagent and restricted Codex to prompt orchestration, evidence review, and guidance.</td><td><span class="status open">OPEN</span></td></tr>
+            <tr><td>1</td><td>24 July 2026, Asia/Dhaka</td><td><code>73ccf3ce57b5ddd2b34ad11cd08722295a697ee7</code></td><td>Initial Tier 0 checkpoint roadmap from repository/PDF evidence and interview decisions.</td><td><span class="status open">OPEN</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <script id="roadmap-data" type="application/json">
+{
+  "document": {
+    "title": "AgriSense Tier 0 Checkpoint Roadmap",
+    "version": 2,
+    "created_date": "2026-07-24",
+    "timezone": "Asia/Dhaka",
+    "phase": "ROADMAP_REVIEW",
+    "approval_status": "OPEN",
+    "implementation_authorized": false,
+    "git": {
+      "branch": "main",
+      "local_sha": "73ccf3ce57b5ddd2b34ad11cd08722295a697ee7",
+      "remote_sha": "73ccf3ce57b5ddd2b34ad11cd08722295a697ee7",
+      "untracked_handoff_files": ["currentprogress.md", "next-session-prompt.md"]
+    }
+  },
+  "status_vocabulary": ["FROZEN", "DECIDED", "ASSUMED", "OPEN", "BLOCKED", "DEFERRED", "VERIFIED", "UNVERIFIED"],
+  "goal": "Produce an evidence-backed, grounded, explained, costed season plan for one Bangladesh Rabi farm through a bounded Sol-directed tool workflow.",
+  "timebox": {
+    "active_minutes": 240,
+    "starts_after": ["complete roadmap approval", "secure target access confirmation", "owner availability confirmation"],
+    "quality_policy": "Do not weaken acceptance criteria to protect the clock; cut optional polish and later tiers first."
+  },
+  "execution_route": {
+    "status": "DECIDED",
+    "budget_snapshot": {"source": "user-reported", "codex_remaining_usd_approx": 70, "hyperagent_available_usd_over": 700},
+    "codex_role": ["orchestrate checkpoints", "write self-contained Hyperagent prompts", "review artifacts, diffs, costs, and executable evidence", "issue repair or next-step guidance"],
+    "hyperagent_role": ["heavy research", "implementation", "focused and adversarial testing", "cold evaluation", "release audit"],
+    "human_role": ["approve roadmap and decisions", "perform secure account actions", "return thread ID, exact Usage cost, artifacts, diffs, and observed results"],
+    "handoff_cycle": ["Codex freezes one checkpoint contract", "Koushik runs the named Hyperagent with the complete prompt", "Hyperagent returns bounded artifacts and evidence", "Codex reviews against the frozen gate", "Codex issues a repair prompt or advances the checkpoint"],
+    "routing": {"datasets": "Research & Recon", "implementation_and_debug": "Build & Debug", "cold_evaluation": "Independent Judge", "release_truth": "Submission & Release", "coverage_only": "Hackathon Control Tower"}
+  },
+  "decisions": [
+    {"id": "D1", "status": "FROZEN", "decision": "React/Vite plus Express/Node, DigitalOcean, PostgreSQL, Open-Meteo, OpenAI Responses API"},
+    {"id": "D2", "status": "FROZEN", "decision": "gpt-5.6-sol with high reasoning by default"},
+    {"id": "D3", "status": "FROZEN", "decision": "Bangladesh, Rabi, mustard, potato, maize, Boro rice"},
+    {"id": "D4", "status": "DECIDED", "decision": "Sol chooses the next allowed deterministic tool; server validates and executes"},
+    {"id": "D5", "status": "DECIDED", "decision": "Checkpoint, micro-test, repair-or-advance, then evaluation-patch-re-evaluation"},
+    {"id": "D6", "status": "DECIDED", "decision": "Kawsar can verify DigitalOcean, PostgreSQL, and OpenAI now"},
+    {"id": "D7", "status": "DEFERRED", "decision": "Tier 1, Tier 2, and other experiments receive separate post-Tier-0 roadmaps"},
+    {"id": "D8", "status": "DECIDED", "decision": "Hyperagent performs heavy execution; Codex conserves credits as prompt orchestrator, evidence reviewer, and guidance layer"}
+  ],
+  "open_prerequisites": [
+    {"id": "P1", "status": "OPEN", "item": "OpenAI key and exact gpt-5.6-sol entitlement"},
+    {"id": "P2", "status": "OPEN", "item": "DigitalOcean secure access and public URL"},
+    {"id": "P3", "status": "OPEN", "item": "PostgreSQL DATABASE_URL available server-side"},
+    {"id": "P4", "status": "OPEN", "item": "Nginx and PM2 control"},
+    {"id": "P5", "status": "OPEN", "item": "GitHub push authority"},
+    {"id": "P6", "status": "OPEN", "item": "Curated agronomic source files and Koushik source review"}
+  ],
+  "data_contract": {
+    "provenance_classes": ["AUTHORITATIVE_STATIC", "OFFICIAL_LIVE_FEED", "THIRD_PARTY_LIVE_API", "TEAM_ASSUMPTION", "SYNTHETIC_FIXTURE"],
+    "provenance_fields": ["record_id", "provenance_class", "publisher", "source_title", "source_url", "publication_date", "retrieved_at_utc", "effective_from", "effective_to", "source_page_or_table", "language", "geo_level", "geo_code", "crop", "season", "variety", "source_unit", "transform_notes", "license_status", "confidence", "raw_content_hash"],
+    "datasets": [
+      {"id": "crop_suitability", "status": "OPEN", "primary_source": "BARC Crop Zoning/CZIS", "rule": "Preserve map year, geography, and assessment basis"},
+      {"id": "soil_observation", "status": "OPEN", "primary_source": "SRDI/BARC CZIS", "rule": "Regional maps are not farm soil tests; units and analytical method are mandatory"},
+      {"id": "crop_calendar", "status": "OPEN", "primary_source": "BAMIS/DAE", "rule": "Preserve crop, region, stage, date/dekad, and calendar version"},
+      {"id": "fertilizer_recommendation", "status": "OPEN", "primary_source": "BARC FRG 2024", "rule": "Keep nutrient rates distinct from fertilizer-product rates and cite page/table"},
+      {"id": "irrigation_checkpoint", "status": "OPEN", "primary_source": "BRRI/BAMIS/IRAS", "rule": "Keep crop-stage trigger, units, weather dependency, and exceptions"},
+      {"id": "pest_disease_checkpoint", "status": "OPEN", "primary_source": "BAMIS/DAE", "rule": "Weather is risk, not diagnosis; chemicals require current registration/label proof"},
+      {"id": "yield_statistic", "status": "OPEN", "primary_source": "BBS", "rule": "Preserve year, geography, method, and preliminary/provisional/final state"},
+      {"id": "farm_economics", "status": "OPEN", "primary_source": "DAM plus dated team evidence", "rule": "Production costs remain TEAM_ASSUMPTION until current uniform evidence exists; market prices stay separate"},
+      {"id": "weather_timeseries", "status": "OPEN", "primary_source": "Open-Meteo with BAMIS/BMD warning cross-check", "rule": "Preserve provider/model, issue/valid/retrieval time, units, and freshness"}
+    ],
+    "synthetic_policy": "Generate fixtures locally with is_synthetic=true; exclude from production RAG and farmer analytics",
+    "licensing_policy": "Record source-specific rights; do not assume government publication equals an open dataset licence"
+  },
+  "synthetic_tests": [
+    {"id": "SYN-01", "name": "blank intake", "checkpoints": ["C1", "C4"], "invariant": "all six fields requested and no downstream tools"},
+    {"id": "SYN-02", "name": "targeted partial intake", "checkpoints": ["C1", "C4"], "invariant": "retain four facts and ask only budget and season"},
+    {"id": "SYN-03", "name": "numeric boundary and overflow", "checkpoints": ["C1"], "invariant": "reject invalid ranges without overflow or side effects"},
+    {"id": "SYN-04", "name": "contradictory facts", "checkpoints": ["C1"], "invariant": "clarify conflicting fields and retain non-conflicting facts"},
+    {"id": "SYN-05", "name": "mixed Bangla and English", "checkpoints": ["C1", "C4"], "invariant": "Unicode safe and no guessed normalization"},
+    {"id": "SYN-06", "name": "outside Bangladesh location", "checkpoints": ["C1", "C2"], "invariant": "reject location and make no weather call"},
+    {"id": "SYN-07", "name": "complete four-crop path", "checkpoints": ["C1", "C2", "C4"], "invariant": "all Tier 0 output invariants without a prescribed winner"},
+    {"id": "SYN-08", "name": "area and budget metamorphic scaling", "checkpoints": ["C2"], "invariant": "totals scale while ROI and order remain invariant"},
+    {"id": "SYN-09", "name": "intake prompt injection", "checkpoints": ["C1", "C3"], "invariant": "only allow-listed domain tools and no secret access"},
+    {"id": "SYN-10", "name": "RAG source prompt injection", "checkpoints": ["C2"], "invariant": "untrusted source text cannot alter policy or crop scope"},
+    {"id": "SYN-11", "name": "repeated tool loop", "checkpoints": ["C1"], "invariant": "deduplication and eight-step limit enforce safe non-completion"},
+    {"id": "SYN-12", "name": "weather timeout", "checkpoints": ["C2", "C3", "C4"], "invariant": "one retry maximum and no invented forecast"},
+    {"id": "SYN-13", "name": "stale weather replay", "checkpoints": ["C2", "C4"], "invariant": "stale data is timestamped and cannot silently ground completion"},
+    {"id": "SYN-14", "name": "concurrent duplicate request", "checkpoints": ["C3"], "invariant": "one logical run, charge, and side-effect set"},
+    {"id": "SYN-15", "name": "PostgreSQL restart persistence and isolation", "checkpoints": ["C3", "C4"], "invariant": "same session persists and new session inherits nothing"},
+    {"id": "SYN-16", "name": "trace secret canary", "checkpoints": ["C0", "C3", "C4", "C5"], "invariant": "canaries absent from every user-visible and persisted surface"}
+  ],
+  "requirements": [
+    {"id": "T0-1", "name": "Conversational intake", "status": "UNVERIFIED", "gate": "Vague and partial messages collect exactly six fields without guessing"},
+    {"id": "T0-2", "name": "Live weather grounding", "status": "UNVERIFIED", "gate": "Actual returned weather values visibly alter advice"},
+    {"id": "T0-3", "name": "Crop recommendation", "status": "UNVERIFIED", "gate": "At least three cited candidates with suitability, water, risk, and profit"},
+    {"id": "T0-4", "name": "Season plan", "status": "UNVERIFIED", "gate": "Cited dated calendar from land preparation through harvest"},
+    {"id": "T0-5", "name": "Financial projection", "status": "UNVERIFIED", "gate": "Itemized internally consistent math responds correctly to inputs"},
+    {"id": "T0-6", "name": "Explained reasoning", "status": "UNVERIFIED", "gate": "Recommendations cite farm, weather, retrieved evidence, and uncertainty"},
+    {"id": "T0-7", "name": "Knowledge base with RAG", "status": "UNVERIFIED", "gate": "Retrieved versioned public-source facts feed advice, not just displayed citations"},
+    {"id": "T0-8", "name": "Visible agent trace", "status": "UNVERIFIED", "gate": "Every consequential number maps to a call, calculation, source, or assumption"}
+  ],
+  "work_items": [
+    {"id": "C0", "title": "Freeze baseline and prove prerequisites", "status": "UNVERIFIED", "start_minute": 0, "end_minute": 20, "executors": ["Hyperagent", "Kawsar"], "orchestrator_reviewer": "Codex", "dependencies": [], "acceptance": ["fresh tests and build pass", "target OpenAI, PostgreSQL, and DigitalOcean reachable", "secrets absent from repository and outputs"]},
+    {"id": "C1", "title": "Complete bounded Sol tool orchestration and intake", "status": "UNVERIFIED", "start_minute": 20, "end_minute": 75, "executors": ["Build & Debug Hyperagent"], "orchestrator_reviewer": "Codex", "dependencies": ["C0"], "acceptance": ["Sol selects allowed next tools", "invalid calls are rejected", "missing fields are never guessed"]},
+    {"id": "C2", "title": "Make RAG and live weather drive the plan", "status": "UNVERIFIED", "start_minute": 75, "end_minute": 135, "executors": ["Research & Recon Hyperagent", "Build & Debug Hyperagent", "Koushik source approval"], "orchestrator_reviewer": "Codex", "dependencies": ["C1"], "acceptance": ["weather materially changes advice", "retrieved facts feed ranking and calendar", "unsupported values are labeled"]},
+    {"id": "C3", "title": "Prove PostgreSQL memory, trace integrity, and recovery", "status": "UNVERIFIED", "start_minute": 135, "end_minute": 175, "executors": ["Build & Debug Hyperagent", "Kawsar"], "orchestrator_reviewer": "Codex", "dependencies": ["C1", "C2"], "acceptance": ["context survives reload/process boundary", "duplicate request is idempotent", "failures are recoverable and truthful"]},
+    {"id": "C4", "title": "Close the browser judge path", "status": "UNVERIFIED", "start_minute": 175, "end_minute": 210, "executors": ["Build & Debug Hyperagent", "Tonmoy"], "orchestrator_reviewer": "Codex", "dependencies": ["C1", "C2", "C3"], "acceptance": ["blank flow completes on desktop and mobile", "essential keyboard path works", "judge can audit every consequential number"]},
+    {"id": "C5", "title": "Deploy, evaluate, patch, re-evaluate, and freeze", "status": "UNVERIFIED", "start_minute": 210, "end_minute": 240, "executors": ["Kawsar", "Independent Judge Hyperagent", "Submission & Release Hyperagent", "Koushik approval"], "orchestrator_reviewer": "Codex", "dependencies": ["C0", "C1", "C2", "C3", "C4"], "acceptance": ["all eight Tier 0 gates verified", "zero critical demo blockers", "exact deployed SHA recorded", "push occurs only with explicit authorization"]}
+  ],
+  "architecture": {
+    "pattern": "bounded hybrid",
+    "model_responsibilities": ["explicit fact extraction", "next allowed tool selection", "evidence-bound explanation", "goal-completion stop"],
+    "server_responsibilities": ["validation", "tool policy", "weather", "retrieval", "ranking", "finance", "calendar", "persistence", "redaction", "trace"],
+    "max_tool_steps": 8,
+    "rag": {"storage": "PostgreSQL structured facts and full-text retrieval", "scope": "four Rabi crops", "must_feed": ["crop ranking", "season calendar", "finance labels", "explanation"]}
+  },
+  "acceptance_gates": [
+    "unit and regression tests",
+    "live OpenAI tool-use probe",
+    "live PostgreSQL persistence across restart",
+    "live Open-Meteo impact proof",
+    "RAG known-answer and injection probes",
+    "HTTP integration",
+    "desktop and mobile browser paths",
+    "secret scan",
+    "accessibility check",
+    "four-minute public demo rehearsal",
+    "remote and deployed SHA readback"
+  ],
+  "tier0_done": {
+    "status": "UNVERIFIED",
+    "conditions": ["all eight official Tier 0 requirements verified", "agentic gate verified", "all target integrations verified", "public judge path verified", "zero critical blockers", "truthful README and exact SHA evidence"]
+  },
+  "changelog": [
+    {"version": 2, "date": "2026-07-24", "change": "Routed heavy work to Hyperagent and Codex to lightweight orchestration/review", "approval": "OPEN"},
+    {"version": 1, "date": "2026-07-24", "change": "Initial evidence-backed checkpoint roadmap", "approval": "OPEN"}
+  ]
+}
+    </script>
+  </main>
+
+  <footer>
+    AgriSense Tier 0 Checkpoint Roadmap · Offline artifact · No credentials or private target values included · Revision 2
+  </footer>
+</body>
+</html>
