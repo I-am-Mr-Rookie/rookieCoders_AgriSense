@@ -99,6 +99,20 @@ export function rankCrops(profile, weather, evidenceByCrop = {}) {
         labor: crop.baseCostBdt * 0.4,
       },
     });
+    const plannedAreaAcres = Math.round(
+      Math.min(profile.farmSizeAcres, profile.budgetBdt / crop.baseCostBdt) * 10000,
+    ) / 10000;
+    const plannedFinancials = calculateFinancials({
+      farmSizeAcres: plannedAreaAcres,
+      yieldPerAcreKg: crop.yieldKg,
+      pricePerKgBdt: crop.priceBdt,
+      costsPerAcre: {
+        seed: crop.baseCostBdt * 0.16,
+        fertilizer: crop.baseCostBdt * 0.26,
+        irrigation: crop.baseCostBdt * 0.18,
+        labor: crop.baseCostBdt * 0.4,
+      },
+    });
 
     return {
       ...crop,
@@ -106,6 +120,13 @@ export function rankCrops(profile, weather, evidenceByCrop = {}) {
       riskLevel: suitability >= 75 ? "low" : suitability >= 55 ? "medium" : "high",
       roughProfitBdt: financials.netProfitBdt,
       financials,
+      costPerAcreBdt: crop.baseCostBdt,
+      fullFarmCostBdt: financials.totalCostBdt,
+      budgetGapBdt: Math.max(0, financials.totalCostBdt - profile.budgetBdt),
+      budgetRemainingBdt: Math.max(0, profile.budgetBdt - financials.totalCostBdt),
+      plannedAreaAcres,
+      plannedCostBdt: plannedFinancials.totalCostBdt,
+      plannedFinancials,
       weatherEvidence: {
         precipitationMm: weather.precipitationMm,
         meanTemperatureC: weather.meanTemperatureC,

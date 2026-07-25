@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: bdapps
+      POSTGRES_USER: bdapps
+      POSTGRES_PASSWORD: bdapps
+    ports:
+      - "5433:5432"
+    volumes:
+      - bdapps_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bdapps -d bdapps"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  bdapps_postgres:

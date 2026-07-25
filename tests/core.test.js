@@ -123,6 +123,29 @@ test("financial projection scales every value with farm size", () => {
   assert.equal(oneAcre.breakEvenYieldKg, oneAcre.totalCostBdt / 35);
 });
 
+test("candidate finances preserve farm facts and derive an affordable planted area", () => {
+  const profile = {
+    location: "Pabna",
+    farmSizeAcres: 10,
+    soilType: "clay loam",
+    waterAvailability: "rainfed",
+    budgetBdt: 50000,
+    targetSeason: "Rabi",
+  };
+
+  const crops = rankCrops(profile, { meanTemperatureC: 28, precipitationMm: 46 });
+  const boro = crops.find((crop) => crop.id === "boro-rice");
+
+  assert.equal(profile.farmSizeAcres, 10);
+  assert.equal(profile.budgetBdt, 50000);
+  assert.equal(boro.costPerAcreBdt, 65000);
+  assert.equal(boro.fullFarmCostBdt, 650000);
+  assert.equal(boro.budgetGapBdt, 600000);
+  assert.equal(boro.plannedAreaAcres, 0.7692);
+  assert.ok(boro.plannedFinancials.totalCostBdt <= profile.budgetBdt);
+  assert.equal(boro.plannedCostBdt, boro.plannedFinancials.totalCostBdt);
+});
+
 test("season plan contains every required checkpoint from land preparation to harvest", () => {
   const plan = buildSeasonPlan("mustard", "2026-11-01");
   const stages = plan.map((item) => item.stage);

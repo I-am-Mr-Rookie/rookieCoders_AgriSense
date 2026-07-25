@@ -1,5 +1,6 @@
 import { createActivityEmitter } from "./activity.js";
 import { buildCompactMemorySummary } from "./memory-summary.js";
+import { isDirectAssistanceRequest } from "./intents.js";
 import { redactRecoveryIds } from "../shared/redaction.js";
 
 const FIELD_LABELS = {
@@ -67,14 +68,17 @@ export function createPlanningWorkflow(deps) {
       const turn = deps.interpretConversationTurn(message, session.profile, {
         pendingField: body.pendingField,
         awaitingField: body.awaitingField === true,
+        responseLanguage: body.responseLanguage,
       });
       let patch = {};
       if (turn.kind === "revision_staged") {
         patch = deps.validateProfilePatch(turn.patch);
-      } else if (!currentPlan && turn.kind === "general") {
-        patch = deps.validateProfilePatch(
-          body.profilePatch ?? await deps.extractProfilePatch(message, session.profile, signal),
-        );
+      } else if (turn.kind === "general") {
+        patch = isDirectAssistanceRequest(message)
+          ? {}
+          : deps.validateProfilePatch(
+              body.profilePatch ?? await deps.extractProfilePatch(message, session.profile, signal),
+            );
       }
       throwIfAborted();
 
@@ -87,6 +91,15 @@ export function createPlanningWorkflow(deps) {
       const changedFields = Object.keys(patch);
       const readyToPlan = changedFields.length > 0 && missingFields.length === 0;
       const planStale = readyToPlan && Boolean(currentPlan);
+      const generalAssistance = turn.kind === "general" && changedFields.length === 0
+        ? await deps.answerGeneralFarmerQuestion({
+            message,
+            currentProfile: session.profile,
+            responseLanguage: body.responseLanguage,
+            signal,
+          })
+        : "";
+      throwIfAborted();
       const summary = buildCompactMemorySummary({
         profile: session.profile,
         previousSummary: memory?.conversationSummary,
@@ -103,15 +116,31 @@ export function createPlanningWorkflow(deps) {
         }, { signal });
       }
 
-      const kind = turn.kind === "general" && changedFields.length
-        ? readyToPlan ? "revision_staged" : "intake_updated"
-        : turn.kind;
-      const assistant = turn.assistant || (
-        missingFields.length
-          ? `I still need: ${missingFields.map((field) => FIELD_LABELS[field]).join(", ")}.`
-          : changedFields.length
-            ? "Your farm details are ready. Review them, then create the plan."
-            : "I can help revise your budget, farm size, soil, water availability, location, or season."
+      const kind = generalAssistance
+        ? "general_assistance"
+        : turn.kind === "general" && changedFields.length
+          ? readyToPlan ? "revision_staged" : "intake_updated"
+          : turn.kind;
+      const wantsBangla = /Bangla|Bengali/i.test(String(body.responseLanguage || ""));
+      const assistant = turn.assistant || generalAssistance || (
+        wantsBangla
+          ? missingFields.length
+            ? `আরও দরকার: ${missingFields.map((field) => ({
+                location: "বাংলাদেশের জেলা",
+                farmSizeAcres: "জমির আয়তন",
+                soilType: "মাটির ধরন",
+                waterAvailability: "পানির ব্যবস্থা",
+                budgetBdt: "বাজেট",
+                targetSeason: "মৌসুম",
+              }[field] ?? field)).join(", ")}।`
+            : changedFields.length
+              ? "খামারের তথ্য প্রস্তুত। দেখে নিয়ে পরিকল্পনা তৈরি করুন।"
+              : "বাজেট, জমির আয়তন, মাটি, পানি, জায়গা বা মৌসুম বদলাতে সাহায্য করতে পারি।"
+          : missingFields.length
+            ? `I still need: ${missingFields.map((field) => FIELD_LABELS[field]).join(", ")}.`
+            : changedFields.length
+              ? "Your farm details are ready. Review them, then create the plan."
+              : "I can help revise your budget, farm size, soil, water availability, location, or season."
       );
       if (body.memoryId && body.memorySessionId) {
         savedMemory = await deps.memoryService.appendConversationTurn(body.memoryId, {
@@ -132,7 +161,7 @@ export function createPlanningWorkflow(deps) {
         assistant,
         pendingField: turn.pendingField,
         changedFields,
-        missingFields,
+        missingFields: generalAssistance ? [] : missingFields,
         readyToPlan,
         planStale,
         memory: savedMemory,
@@ -141,7 +170,7 @@ export function createPlanningWorkflow(deps) {
 
     const patch = deps.validateProfilePatch(
       body.profilePatch ?? (
-        body.action === "plan"
+        body.action === "plan" || body.action === "analyze"
           ? {}
           : await deps.extractProfilePatch(message, session.profile, signal)
       ),
@@ -258,25 +287,132 @@ export function createPlanningWorkflow(deps) {
       candidateCount: crops.length,
     }, 0);
 
+    const rag = {
+      ...deps.loadCorpus().report,
+      retrieval: "in-process structured lexical retrieval",
+      embeddingMode: "not used",
+    };
+    const compactSummary = buildCompactMemorySummary({
+      profile: session.profile,
+      previousSummary: memory?.conversationSummary,
+      message,
+    });
+
+    if (body.action === "analyze") {
+      phaseStarted = clock().getTime();
+      await emit("agent.response.started", "AgriSense is comparing four grounded crop options", "running", {
+        model: deps.openAiMode(),
+      });
+      const candidates = await deps.briefCropCandidates({
+        profile: session.profile,
+        weather,
+        crops,
+        knowledge,
+        responseLanguage: body.responseLanguage,
+        signal,
+      });
+      throwIfAborted();
+      const agentDuration = clock().getTime() - phaseStarted;
+      const bangla = /Bangla|Bengali/i.test(String(body.responseLanguage || ""));
+      const answer = bangla
+        ? "আপনার তথ্য ও বাজেট দেখে চারটি ফসল বাছাই করেছি। একটি ফসল নির্বাচন করুন; তারপরই তার পূর্ণ পরিকল্পনা তৈরি হবে।"
+        : "I compared four grounded crop options against your farm and budget. Choose one crop; only then will AgriSense create its full plan.";
+      trace.push(deps.createTraceEntry(
+        "agent.candidate_briefs",
+        { model: deps.openAiMode(), candidateIds: candidates.map((crop) => crop.id) },
+        { candidateCount: candidates.length },
+        agentDuration,
+      ));
+      await emit("agent.response.completed", "Four crop choices are ready", "completed", {
+        candidateCount: candidates.length,
+      }, agentDuration);
+      const timings = {
+        weatherMs: weatherDuration,
+        retrievalMs: retrievalDuration,
+        agentMs: agentDuration,
+        totalMs: clock().getTime() - startedAt,
+      };
+      session.lastResult = {
+        candidateSelectionRequired: true,
+        candidates,
+        weather,
+        knowledge,
+        rag,
+        trace,
+        timings,
+        explanation: answer,
+      };
+      await deps.saveSession(session);
+      let savedMemory = memory;
+      if (body.memoryId) {
+        savedMemory = await deps.memoryService.savePlan(body.memoryId, {
+          profile: session.profile,
+          lastResult: session.lastResult,
+          conversationSummary: compactSummary,
+          memorySessionId: body.memorySessionId,
+        }, { signal });
+        if (body.memorySessionId) {
+          savedMemory = await deps.memoryService.appendConversationTurn(body.memoryId, {
+            sessionId: body.memorySessionId,
+            messages: [{ role: "agent", text: answer }],
+            conversationSummary: compactSummary,
+          });
+        }
+        await emit("memory.saved", "Crop choices saved to farm memory", "completed", {
+          profileFields: Object.keys(session.profile),
+          candidateCount: candidates.length,
+        });
+      }
+      await emit("request.completed", "Choose one crop to continue", "completed", {
+        candidateCount: candidates.length,
+        totalDurationMs: timings.totalMs,
+      });
+      return {
+        sessionId,
+        profile: session.profile,
+        memoryConnected: Boolean(body.memoryId),
+        assistant: answer,
+        memory: savedMemory,
+        ...session.lastResult,
+      };
+    }
+
+    const selectedCrop = body.selectedCropId
+      ? crops.find((crop) => crop.id === String(body.selectedCropId))
+      : crops[0];
+    if (!selectedCrop) throw new Error("Select one of the four available crops.");
+    const plannedAreaAcres = selectedCrop.plannedAreaAcres ?? session.profile.farmSizeAcres;
+    const plannedFinancials = selectedCrop.plannedFinancials ?? selectedCrop.financials;
+    const plannedProfile = {
+      ...session.profile,
+      farmSizeAcres: plannedAreaAcres,
+      originalFarmSizeAcres: session.profile.farmSizeAcres,
+      plannedAreaAcres,
+    };
+    const planCrop = {
+      ...selectedCrop,
+      financials: plannedFinancials,
+      roughProfitBdt: plannedFinancials?.netProfitBdt ?? selectedCrop.roughProfitBdt,
+    };
     const startDate = body.startDate || "2026-11-01";
-    const planEvidence = deps.getPlanEvidence(crops[0].id, session.profile);
-    const seasonPlan = deps.buildSeasonPlan(crops[0].id, startDate, planEvidence);
+    const planEvidence = deps.getPlanEvidence(selectedCrop.id, session.profile);
+    const seasonPlan = deps.buildSeasonPlan(selectedCrop.id, startDate, planEvidence);
     trace.push(deps.createTraceEntry(
       "season.build",
-      { cropId: crops[0].id, startDate },
+      { cropId: selectedCrop.id, startDate, plannedAreaAcres },
       seasonPlan,
       0,
     ));
     const inputSchedule = deps.buildInputSchedule({
-      crop: crops[0],
-      profile: session.profile,
+      crop: planCrop,
+      profile: plannedProfile,
       weather,
       seasonPlan,
       preferences,
     });
     trace.push(deps.createTraceEntry(
       "scheduler.build",
-      { cropId: crops[0].id, startDate },
+      { cropId: selectedCrop.id, startDate, plannedAreaAcres },
       inputSchedule,
       0,
     ));
@@ -286,30 +422,21 @@ export function createPlanningWorkflow(deps) {
       confirmationRequired: inputSchedule.filter((item) => item.status === "REQUIRES_FARMER_CONFIRMATION").length,
     }, 0);
 
-    const rag = {
-      ...deps.loadCorpus().report,
-      retrieval: "in-process structured lexical retrieval",
-      embeddingMode: "not used",
-    };
     phaseStarted = clock().getTime();
     await emit("agent.response.started", "AgriSense is checking tools and explaining the plan", "running", {
       model: deps.openAiMode(),
     });
-    const compactSummary = buildCompactMemorySummary({
-      profile: session.profile,
-      previousSummary: memory?.conversationSummary,
-      message,
-    });
     const explanation = await deps.explainRecommendation({
-      profile: session.profile,
+      profile: plannedProfile,
       weather,
       knowledge,
-      crops,
+      crops: [planCrop],
       seasonPlan,
       inputSchedule,
       rag,
       memorySummary: compactSummary,
       userMessage: message,
+      responseLanguage: body.responseLanguage,
       signal,
     });
     throwIfAborted();
@@ -336,7 +463,14 @@ export function createPlanningWorkflow(deps) {
     session.lastResult = {
       weather,
       knowledge,
-      crops,
+      crops: [planCrop],
+      candidates: previousLastResult?.candidates ?? crops,
+      candidateSelectionRequired: false,
+      candidateCrops: crops,
+      selectedCropId: selectedCrop.id,
+      plannedAreaAcres,
+      originalFarmSizeAcres: session.profile.farmSizeAcres,
+      budgetBdt: session.profile.budgetBdt,
       seasonPlan,
       inputSchedule,
       explanation: explanation.text,
@@ -365,7 +499,10 @@ export function createPlanningWorkflow(deps) {
       if (body.memorySessionId) {
         savedMemory = await deps.memoryService.appendConversationTurn(body.memoryId, {
           sessionId: body.memorySessionId,
-          messages: [{ role: "agent", text: explanation.text }],
+          messages: [
+            ...(message ? [{ role: "farmer", text: message }] : []),
+            { role: "agent", text: explanation.text },
+          ],
           conversationSummary: compactSummary,
         });
       }
@@ -385,7 +522,7 @@ export function createPlanningWorkflow(deps) {
       ...session.lastResult,
     };
     await emit("request.completed", "Plan ready", "completed", {
-      topCrop: crops[0].name,
+      topCrop: selectedCrop.name,
       scheduleItems: inputSchedule.length,
       totalDurationMs: timings.totalMs,
     });

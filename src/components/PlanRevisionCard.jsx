@@ -1,24 +1,27 @@
+import { t } from "../i18n.js";
+
 export function PlanRevisionCard({
   revision,
   canCreate,
   busy,
   onCreatePlan,
+  language = "en",
 }) {
   if (!revision) return null;
 
   if (revision.completed) {
-    return <p className="revision-complete">Updated plan created and saved.</p>;
+    return <p className="revision-complete">{t(language, "updatedPlanSaved")}</p>;
   }
 
   if (!revision.readyToPlan) return null;
 
   return (
-    <aside className="plan-revision-card" aria-label="Plan update ready">
-      <span className="revision-kicker">Plan update ready</span>
-      <p>Your new farm details are saved. The recommendation will change only when you create the updated plan.</p>
+    <aside className="plan-revision-card" aria-label={t(language, "planUpdateReady")}>
+      <span className="revision-kicker">{t(language, "planUpdateReady")}</span>
+      <p>{t(language, "revisionSaved")}</p>
       {canCreate && (
         <button type="button" disabled={busy} onClick={onCreatePlan}>
-          {busy ? "Creating updated plan…" : "Create updated plan"}
+          {busy ? t(language, "creatingUpdatedPlan") : t(language, "createUpdatedPlan")}
         </button>
       )}
     </aside>

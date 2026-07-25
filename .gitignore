@@ -9,3 +9,4 @@ npm-debug.log*
 *.key
 .DS_Store
 .playwright-cli/
+tmp/

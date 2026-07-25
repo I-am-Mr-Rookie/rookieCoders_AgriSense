@@ -8,11 +8,15 @@ const runMessageUrl = new URL("../src/components/AgentRunMessage.jsx", import.me
 const evidenceListUrl = new URL("../src/components/EvidenceGroupList.jsx", import.meta.url);
 const revisionCardUrl = new URL("../src/components/PlanRevisionCard.jsx", import.meta.url);
 const conversationSidebarUrl = new URL("../src/components/ConversationSidebar.jsx", import.meta.url);
+const candidateSelectorUrl = new URL("../src/components/CropCandidateSelector.jsx", import.meta.url);
 const markdownSource = existsSync(markdownUrl) ? readFileSync(markdownUrl, "utf8") : "";
 const runMessageSource = existsSync(runMessageUrl) ? readFileSync(runMessageUrl, "utf8") : "";
 const evidenceListSource = existsSync(evidenceListUrl) ? readFileSync(evidenceListUrl, "utf8") : "";
 const revisionCardSource = existsSync(revisionCardUrl) ? readFileSync(revisionCardUrl, "utf8") : "";
 const conversationSidebarSource = existsSync(conversationSidebarUrl) ? readFileSync(conversationSidebarUrl, "utf8") : "";
+const candidateSelectorSource = existsSync(candidateSelectorUrl) ? readFileSync(candidateSelectorUrl, "utf8") : "";
+const i18nSource = readFileSync(new URL("../src/i18n.js", import.meta.url), "utf8");
+const localizedAppSource = `${appSource}\n${i18nSource}`;
 const cssSource = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 const mainSource = readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
 const packageSource = readFileSync(new URL("../package.json", import.meta.url), "utf8");
@@ -25,7 +29,7 @@ function assertIncludesAll(source, fragments) {
 
 test("recommendation shows the complete financial contract", () => {
   const labels = [
-    "Itemized cost",
+    "Cost breakdown",
     "Total cost",
     "Expected yield",
     "Expected revenue",
@@ -33,11 +37,11 @@ test("recommendation shows the complete financial contract", () => {
     "ROI",
     "Break-even yield",
     "Financial basis:",
-    "Team assumption",
-    "not live market data or retrieved evidence",
+    "Planning estimate from team assumptions",
+    "not live market data",
   ];
 
-  assertIncludesAll(appSource, labels);
+  assertIncludesAll(localizedAppSource, labels);
 });
 
 test("fresh demo state is sent with its new explicit session ID", () => {
@@ -60,12 +64,17 @@ test("fresh demo state is sent with its new explicit session ID", () => {
 });
 
 test("judge path exposes honest and accessible request states", () => {
-  assertIncludesAll(appSource, [
+  assertIncludesAll(localizedAppSource, [
     "Not started",
     "Request in progress",
     "Request failed",
     "Plan generated",
     "No live data has been requested yet.",
+    't(language, "notStarted")',
+    't(language, "requestInProgress")',
+    't(language, "requestFailed")',
+    't(language, "planGenerated")',
+    't(language, "noLiveData")',
     'role="status"',
     'aria-live="polite"',
     'aria-atomic="true"',
@@ -85,13 +94,13 @@ test("client source contains no mojibake markers", () => {
 });
 
 test("polished workspace exposes semantic navigation and honest progress feedback", () => {
-  assertIncludesAll(appSource, [
-    'aria-label="Planning workspace"',
+  assertIncludesAll(localizedAppSource, [
+    'aria-label={t(language, "inAppPlanning")}',
     'className="workflow-tabs"',
-    "Farm advisor",
+    "Farm adviser",
     "Crop ranking",
     "Season roadmap",
-    "Evidence & trace",
+    "Evidence and trace",
     "AgentRunMessage",
     'tabIndex={result ? undefined : -1}',
   ]);
@@ -124,7 +133,7 @@ test("narrow layouts contain flex, grid, and long-content overflow", () => {
 });
 
 test("Tier 1 client exposes streamed in-chat runs, persistent memory, and scheduler", () => {
-  assertIncludesAll(appSource, [
+  assertIncludesAll(localizedAppSource, [
     'import AgentRunMessage from "./components/AgentRunMessage.jsx"',
     'import Markdown from "./components/Markdown.jsx"',
     'import EvidenceGroupList from "./components/EvidenceGroupList.jsx"',
@@ -141,17 +150,17 @@ test("Tier 1 client exposes streamed in-chat runs, persistent memory, and schedu
     "Create private memory",
     "Resume memory",
     "Forget memory",
-    "Fertilizer & irrigation scheduler",
+    "Fertilizer and irrigation schedule",
     "AbortController",
     'type="date"',
-    "Process-memory mode: saved memory lasts only until this server restarts.",
-    "Auto-adjust irrigation when forecast rain conflicts",
+    "Temporary memory mode: saved information will be lost if this server restarts.",
+    "Adjust irrigation when forecast rain conflicts",
     "disabled={busy}",
     "View saved memory",
     'fetch("/api/memory/preferences"',
-    "Evidence & safety details",
-    "Quantity omitted",
-    'aria-label="Color theme"',
+    "Evidence and safety",
+    "Quantity not shown:",
+    'aria-label={t(language, "colorTheme")}',
     "<AgentRunMessage",
     "<EvidenceGroupList",
   ]);
@@ -190,10 +199,11 @@ test("agent run stays inside one assistant message with accessible terminal cont
 });
 
 test("intake-only completions never claim that a plan was generated", () => {
-  assertIncludesAll(appSource, [
-    'outcome: data.crops ? "plan" : "intake"',
+  assertIncludesAll(localizedAppSource, [
+    'outcome: data.seasonPlan ? "plan" : data.candidateSelectionRequired ? "selection" : "intake"',
     'latestRun.outcome === "plan"',
-    "Farm details requested",
+    "More farm details needed",
+    't(language, "detailsRequested")',
   ]);
   assertIncludesAll(runMessageSource, [
     'run.outcome === "plan"',
@@ -202,10 +212,37 @@ test("intake-only completions never claim that a plan was generated", () => {
   ]);
 });
 
-test("only the latest terminal run can expose the global retry action", () => {
+test("four budget-aware crop choices appear before selected full-plan generation", () => {
   assertIncludesAll(appSource, [
+    'action: "analyze"',
+    "candidateSelectionRequired",
+    "candidateResult?.candidates?.length === 4",
+    "selectedCropId: crop.id",
+    "<CropCandidateSelector",
+  ]);
+  assertIncludesAll(candidateSelectorSource, [
+    'role="radiogroup"',
+    'role="radio"',
+    "Pros",
+    "Cons",
+    "Full-farm cost",
+    "Shortfall",
+    "Affordable area",
+    "Planned cost",
+    "Choose crop",
+  ]);
+  assertIncludesAll(cssSource, [
+    ".candidate-grid",
+    ".budget-integrity",
+    ".conversation-workspace>.side-stack>.summary{display:none}",
+  ]);
+});
+
+test("only the latest terminal run can expose the global retry action", () => {
+  assertIncludesAll(localizedAppSource, [
     "retryAvailable={item.run.id === latestRun?.id}",
-    "onRetry={retryLastRequest}",
+    "onRetry={() => retryAgentRun(item.run)}",
+    "if (run?.tier2Request)",
   ]);
   assertIncludesAll(runMessageSource, [
     "retryAvailable = false",
@@ -275,9 +312,9 @@ test("approved brand uses locally bundled editorial and Bangla-ready variable fo
 });
 
 test("theme control is an accessible System Light Dark segmented control", () => {
-  assertIncludesAll(appSource, [
+  assertIncludesAll(localizedAppSource, [
     'role="group"',
-    'aria-label="Color theme"',
+    'aria-label={t(language, "colorTheme")}',
     'aria-pressed={theme === option.value}',
     'System',
     'Light',
@@ -306,13 +343,13 @@ test("approved chat-first theme removes legacy light leakage and styles agent ru
 });
 
 test("post-plan edits use lightweight chat and an explicit persistent plan action", () => {
-  const revisionUiSource = `${appSource}\n${revisionCardSource}`;
+  const revisionUiSource = `${appSource}\n${revisionCardSource}\n${i18nSource}`;
   for (const expected of [
     'fetch("/api/session/message"',
     'action: "chat"',
     "pendingField: revision.pendingField",
     "Create updated plan",
-    "profile changes are waiting.",
+    't(language, "revisionSaved")',
     "ensurePrivateMemory",
     'action: "plan"',
     "PlanRevisionCard",
@@ -372,7 +409,7 @@ test("one private recovery code exposes separate switchable chat sessions", () =
     'fetch("/api/memory/sessions"',
     "<ConversationSidebar",
   ]);
-  assertIncludesAll(conversationSidebarSource, [
+  assertIncludesAll(`${conversationSidebarSource}\n${i18nSource}`, [
     "Recent chats",
     "New chat",
     "recent.map",

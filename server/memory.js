@@ -127,6 +127,12 @@ export function createMemoryService({
     return version === 1 || version === 2 ? publicMemory(record) : null;
   }
 
+  async function ensure(memoryId, initial = {}) {
+    const existing = await load(memoryId);
+    if (existing) return existing;
+    return save(memoryId, initial);
+  }
+
   async function save(memoryId, update) {
     const id = memoryStorageId(memoryId);
     const normalized = normalizeUpdate(update);
@@ -261,6 +267,7 @@ export function createMemoryService({
 
   return {
     create,
+    ensure,
     load,
     save,
     savePlan,

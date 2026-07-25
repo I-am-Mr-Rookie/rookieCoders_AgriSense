@@ -1,5 +1,7 @@
 import React from "react";
 
+import { t } from "../i18n.js";
+
 function sessionTime(value) {
   if (!value) return "";
   const date = new Date(value);
@@ -15,6 +17,7 @@ export default function ConversationSidebar({
   busy,
   onNew,
   onSelect,
+  language = "en",
 }) {
   const recent = [...sessions].sort((left, right) =>
     String(right.updatedAt || "").localeCompare(String(left.updatedAt || ""))
@@ -24,23 +27,23 @@ export default function ConversationSidebar({
     <aside className="conversation-sidebar" aria-label="Conversation history">
       <div className="conversation-sidebar-heading">
         <div>
-          <span className="eyebrow">Your workspace</span>
-          <h2>Recent chats</h2>
+          <span className="eyebrow">{t(language, "yourWorkspace")}</span>
+          <h2>{t(language, "recentChats")}</h2>
         </div>
         <button
           type="button"
           className="new-chat-button"
           disabled={busy}
           onClick={onNew}
-          aria-label="Start a new chat"
+          aria-label={t(language, "newChat")}
         >
           <span aria-hidden="true">＋</span>
-          New chat
+          {t(language, "newChat")}
         </button>
       </div>
       {!connected ? (
         <p className="conversation-sidebar-empty">
-          Your first message creates one private recovery code for every chat.
+          {t(language, "noMemoryChats")}
         </p>
       ) : recent.length ? (
         <div className="conversation-list">
@@ -53,20 +56,20 @@ export default function ConversationSidebar({
               disabled={busy}
               onClick={() => onSelect(session)}
             >
-              <span className="conversation-item-title">{session.title || "New conversation"}</span>
+              <span className="conversation-item-title">{session.title || t(language, "newConversation")}</span>
               <span className="conversation-item-meta">
-                {session.lastResult ? "Plan ready" : "Conversation"}
+                {session.lastResult ? t(language, "planReady") : t(language, "conversation")}
                 {sessionTime(session.updatedAt) ? ` · ${sessionTime(session.updatedAt)}` : ""}
               </span>
             </button>
           ))}
         </div>
       ) : (
-        <p className="conversation-sidebar-empty">Start a new chat to build your farm plan.</p>
+        <p className="conversation-sidebar-empty">{t(language, "startNewChat")}</p>
       )}
       <div className="workspace-memory-state">
         <span aria-hidden="true">{connected ? "●" : "○"}</span>
-        <span>{connected ? "Private memory connected" : "Memory starts automatically"}</span>
+        <span>{connected ? t(language, "privateMemoryConnected") : t(language, "memoryStarts")}</span>
       </div>
     </aside>
   );

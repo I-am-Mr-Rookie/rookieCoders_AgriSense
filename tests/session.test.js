@@ -76,7 +76,7 @@ test("a fresh demo gets a new session and only resets demo-owned state", () => {
   assert.deepEqual(first.conversation, [
     {
       role: "agent",
-      text: "Tell me about your farm. I will ask only for missing details.",
+      text: "How can I help you?",
     },
   ]);
   assert.deepEqual(

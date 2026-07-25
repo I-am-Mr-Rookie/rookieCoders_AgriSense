@@ -1,5 +1,4 @@
-const INITIAL_GREETING =
-  "Tell me about your farm. I will ask only for missing details.";
+const INITIAL_GREETING = "How can I help you?";
 const SESSION_STORAGE_KEY = "agrisense.sessionId";
 
 export function createInitialConversation() {

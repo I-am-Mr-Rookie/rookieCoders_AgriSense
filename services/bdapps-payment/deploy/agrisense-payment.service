@@ -1,0 +1,26 @@
+[Unit]
+Description=AgriSense bdapps payment gateway
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/agrisense-payment/current
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/agrisense-payment/current/.env
+ExecStart=/usr/bin/node server/src/index.js
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

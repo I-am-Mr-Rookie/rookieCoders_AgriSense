@@ -62,6 +62,13 @@ function dependencies(overrides = {}) {
         timestamp: "2026-07-24T19:00:00.000Z",
       }),
       openAiMode: () => "gpt-5.6-sol/adaptive-medium-high",
+      briefCropCandidates: async ({ crops }) => crops.map((crop) => ({
+        ...crop,
+        summary: `${crop.name} summary`,
+        pros: ["Grounded advantage"],
+        cons: ["Grounded limitation"],
+      })),
+      answerGeneralFarmerQuestion: async () => "How can I help with your farm today?",
       explainRecommendation: async () => ({
         text: "**Maize** is the grounded recommendation.",
         trace: [{ tool: "inspect_weather", durationMs: 1 }],
@@ -199,6 +206,78 @@ test("chat turns ask for a missing revision value without starting planning", as
   assert.equal(savedSessions.length, 0);
 });
 
+test("a new general chat still uses model intake when an older plan exists", async () => {
+  let extractionCalls = 0;
+  let weatherCalls = 0;
+  const existingPlan = { crops: [{ id: "maize" }], explanation: "Previous plan" };
+  const { deps, savedSessions } = dependencies({
+    loadSession: async (id) => ({
+      id,
+      profile: completeProfile(),
+      lastResult: existingPlan,
+    }),
+    interpretConversationTurn: () => ({
+      kind: "general",
+      assistant: "",
+      pendingField: "",
+      patch: {},
+      changedFields: [],
+    }),
+    extractProfilePatch: async () => {
+      extractionCalls += 1;
+      return { location: "Pabna" };
+    },
+    getWeather: async () => {
+      weatherCalls += 1;
+      return {};
+    },
+  });
+
+  const result = await createPlanningWorkflow(deps)({
+    action: "chat",
+    sessionId: "new-chat-with-history",
+    message: "Suggest me a budget for cultivating crops in Pabna",
+  });
+
+  assert.equal(extractionCalls, 1);
+  assert.equal(weatherCalls, 0);
+  assert.equal(result.kind, "revision_staged");
+  assert.equal(result.profile.location, "Pabna");
+  assert.equal(result.planStale, true);
+  assert.deepEqual(savedSessions.at(-1).lastResult, existingPlan);
+});
+
+test("an open-ended farmer request is answered by the agent without forcing profile intake", async () => {
+  let assistanceCalls = 0;
+  let extractionCalls = 0;
+  const { deps } = dependencies({
+    extractProfilePatch: async () => {
+      extractionCalls += 1;
+      return {};
+    },
+    getMissingFields: () => ["location", "farmSizeAcres", "targetSeason"],
+    answerGeneralFarmerQuestion: async ({ message, responseLanguage }) => {
+      assistanceCalls += 1;
+      assert.equal(message, "My area is flooding. What should I do?");
+      assert.equal(responseLanguage, "English");
+      return "Move people and livestock to higher ground first, and follow official local evacuation advice.";
+    },
+  });
+
+  const result = await createPlanningWorkflow(deps)({
+    action: "chat",
+    sessionId: "flood-help",
+    message: "My area is flooding. What should I do?",
+    responseLanguage: "English",
+  });
+
+  assert.equal(assistanceCalls, 1);
+  assert.equal(extractionCalls, 0);
+  assert.equal(result.kind, "general_assistance");
+  assert.deepEqual(result.missingFields, []);
+  assert.match(result.assistant, /higher ground/);
+});
+
 test("chat turns persist a staged revision without replacing the existing plan", async () => {
   let weatherCalls = 0;
   const existingPlan = { crops: [{ id: "maize" }], explanation: "Previous plan" };
@@ -287,6 +366,63 @@ test("explicit plan action uses the staged session profile", async () => {
   assert.equal(rankedBudget, 40000);
   assert.equal(result.profile.budgetBdt, 40000);
   assert.equal(result.crops[0].id, "mustard");
+});
+
+test("analysis returns four choices without generating a full plan", async () => {
+  const ranked = ["mustard", "maize", "potato", "boro-rice"].map((id, index) => ({
+    id,
+    name: id,
+    plannedAreaAcres: 1,
+    plannedFinancials: { netProfitBdt: 100, costBreakdownBdt: { fertilizer: 20, irrigation: 10 } },
+    sources: [],
+  }));
+  const { deps } = dependencies({ rankCrops: () => ranked });
+
+  const result = await createPlanningWorkflow(deps)({
+    action: "analyze",
+    sessionId: "candidate-analysis",
+    profilePatch: completeProfile(),
+  });
+
+  assert.equal(result.candidateSelectionRequired, true);
+  assert.equal(result.candidates.length, 4);
+  assert.equal(result.seasonPlan, undefined);
+  assert.equal(result.inputSchedule, undefined);
+});
+
+test("selected crop creates the only full plan and keeps original farm facts", async () => {
+  const ranked = ["mustard", "maize", "potato", "boro-rice"].map((id, index) => ({
+    id,
+    name: id,
+    plannedAreaAcres: index + 1,
+    plannedFinancials: { netProfitBdt: 100, costBreakdownBdt: { fertilizer: 20, irrigation: 10 } },
+    sources: [],
+  }));
+  let planCropId;
+  const { deps } = dependencies({
+    rankCrops: () => ranked,
+    buildSeasonPlan: (cropId) => {
+      planCropId = cropId;
+      return [
+        { stage: "fertilizer", date: "2026-11-23", evidence: [] },
+        { stage: "irrigation", date: "2026-12-06", evidence: [] },
+      ];
+    },
+  });
+
+  const result = await createPlanningWorkflow(deps)({
+    action: "plan",
+    selectedCropId: "potato",
+    sessionId: "candidate-selection",
+    profilePatch: completeProfile(),
+  });
+
+  assert.equal(planCropId, "potato");
+  assert.equal(result.selectedCropId, "potato");
+  assert.equal(result.crops.length, 1);
+  assert.equal(result.crops[0].id, "potato");
+  assert.equal(result.profile.farmSizeAcres, 1);
+  assert.equal(result.plannedAreaAcres, 3);
 });
 
 test("connected chat turns append only the visible farmer and assistant messages", async () => {
