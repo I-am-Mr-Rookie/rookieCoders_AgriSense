@@ -97,7 +97,14 @@ export async function startRealtimeSession({
     throw new Error("Realtime voice returned an invalid session credential.");
   }
 
-  const stream = await navigatorObject?.mediaDevices?.getUserMedia?.({ audio: true });
+  const stream = await navigatorObject?.mediaDevices?.getUserMedia?.({
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      channelCount: 1,
+    },
+  });
   if (!stream) throw new Error("Microphone access is unavailable.");
 
   const peerConnection = new PeerConnection();

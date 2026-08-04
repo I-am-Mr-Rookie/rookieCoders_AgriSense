@@ -105,3 +105,23 @@ test("tool-loop failure returns a sanitized deterministic recovery", async () =>
   assert.doesNotMatch(serialized, /provider exploded/i);
   assert.doesNotMatch(serialized, /sk-super-secret-do-not-leak/i);
 });
+
+test("explanation deadline returns a grounded fallback instead of spinning", async () => {
+  const fakeClient = {
+    responses: {
+      create: async (_request, options = {}) => new Promise((_resolve, reject) => {
+        options.signal?.addEventListener("abort", () => {
+          reject(Object.assign(new Error("deadline"), { name: "AbortError" }));
+        }, { once: true });
+      }),
+    },
+  };
+
+  const started = Date.now();
+  const result = await explainRecommendation({ ...context, explanationTimeoutMs: 20 }, fakeClient);
+
+  assert.ok(Date.now() - started < 500);
+  assert.equal(result.mode, "deterministic-timeout");
+  assert.deepEqual(result.trace[0].result, { code: "MODEL_TOOL_LOOP_TIMEOUT" });
+  assertGroundedRecoveryText(result.text);
+});

@@ -27,6 +27,19 @@ function assertIncludesAll(source, fragments) {
   assert.deepEqual(missing, []);
 }
 
+test("farmer footer does not expose the internal self-test route", () => {
+  assert.equal(appSource.includes('href="/evaluation.html"'), false);
+  assert.equal(appSource.includes("Open the self-test"), false);
+});
+
+test("chat can hand an LLM-requested crop plan into the full planning workflow", () => {
+  assertIncludesAll(appSource, [
+    "data.planRequest",
+    "selectedCropId: data.planRequest.selectedCropId",
+    "action: data.planRequest.action",
+  ]);
+});
+
 test("recommendation shows the complete financial contract", () => {
   const labels = [
     "Cost breakdown",
@@ -44,23 +57,20 @@ test("recommendation shows the complete financial contract", () => {
   assertIncludesAll(localizedAppSource, labels);
 });
 
-test("fresh demo state is sent with its new explicit session ID", () => {
+test("Gazipur demo only copies a reusable conversational prompt", () => {
   assertIncludesAll(appSource, [
     "loadOrCreateSessionId",
     "persistSessionId",
     "const [sessionId, setSessionId] = useState(() => loadOrCreateSessionId());",
     "async function send(payload, requestSessionId = sessionId, options = {})",
     "body: JSON.stringify({ ...payload, sessionId: requestSessionId })",
-    "function runDemo()",
-    "const fresh = createFreshDemoState();",
-    "setSessionId(fresh.sessionId);",
-    "setMessage(fresh.message);",
-    "setConversation(fresh.conversation);",
-    "setResult(fresh.result);",
-    "setError(fresh.error);",
-    "const privateMemory = await ensurePrivateMemory(fresh.sessionId, fresh.conversation);",
-    "{ memoryId: privateMemory.memoryId, mode: \"demo\" }",
+    "DEMO_PROMPTS",
+    "async function copyDemoPrompt()",
+    "navigator.clipboard.writeText",
+    "setDemoCopied(true)",
   ]);
+  assert.equal(appSource.includes("function runDemo()"), false);
+  assert.equal(appSource.includes("profilePatch: DEMO_PROFILE"), false);
 });
 
 test("judge path exposes honest and accessible request states", () => {
@@ -238,6 +248,10 @@ test("four budget-aware crop choices appear before selected full-plan generation
   ]);
 });
 
+test("crop selection resends the visible validated profile after a local server restart", () => {
+  assert.match(appSource, /profilePatch:\s*candidateResult\?\.profile/);
+});
+
 test("only the latest terminal run can expose the global retry action", () => {
   assertIncludesAll(localizedAppSource, [
     "retryAvailable={item.run.id === latestRun?.id}",
@@ -335,6 +349,7 @@ test("approved chat-first theme removes legacy light leakage and styles agent ru
     ".agent-run-message",
     ".agent-run-summary",
     ".agent-run-step",
+    "grid-auto-rows:max-content",
     ".evidence-group-heading",
     "@media(prefers-reduced-motion:reduce)",
   ]);
@@ -421,10 +436,14 @@ test("short conversations use a centered welcome state without truncating the tr
   assertIncludesAll(appSource, [
     'data-short={conversation.length <= 1}',
     "conversation-workspace",
+    'className="plan-context-controls"',
+    'className="plan-context-body"',
   ]);
   assertIncludesAll(compactCss, [
     ".conversation-workspace{",
     '.messages[data-short="true"]',
-    "grid-template-columns:220pxminmax(0,1fr)300px",
+    "main{width:min(100%,1520px)",
+    "grid-template-columns:180pxminmax(680px,1fr)260px",
+    ".plan-context-controls{",
   ]);
 });

@@ -206,6 +206,36 @@ test("chat turns ask for a missing revision value without starting planning", as
   assert.equal(savedSessions.length, 0);
 });
 
+test("rehydrates a stale recovery code from the validated client profile after a local restart", async () => {
+  const recovered = [];
+  const memoryService = {
+    load: async () => null,
+    ensure: async (memoryId, initial) => {
+      recovered.push({ memoryId, initial: structuredClone(initial) });
+      return structuredClone(initial);
+    },
+    savePlan: async (_memoryId, value) => value,
+    appendConversationTurn: async (_memoryId, value) => value,
+  };
+  const { deps } = dependencies({ memoryService });
+  const run = createPlanningWorkflow(deps);
+
+  const result = await run({
+    action: "plan",
+    sessionId: "session-recovered",
+    memoryId: "farm_0123456789abcdefghijklmn",
+    memorySessionId: "session-recovered",
+    profilePatch: completeProfile(),
+    selectedCropId: "maize",
+  });
+
+  assert.equal(result.profile.location, "Gazipur");
+  assert.equal(result.seasonPlan.length, 2);
+  assert.equal(recovered.length, 1);
+  assert.deepEqual(recovered[0].initial.profile, completeProfile());
+  assert.equal(recovered[0].initial.sessions[0].id, "session-recovered");
+});
+
 test("a new general chat still uses model intake when an older plan exists", async () => {
   let extractionCalls = 0;
   let weatherCalls = 0;
@@ -276,6 +306,66 @@ test("an open-ended farmer request is answered by the agent without forcing prof
   assert.equal(result.kind, "general_assistance");
   assert.deepEqual(result.missingFields, []);
   assert.match(result.assistant, /higher ground/);
+});
+
+test("newer session facts override stale cross-session memory", async () => {
+  const current = { ...completeProfile(), budgetBdt: 100000 };
+  const stale = { ...completeProfile(), budgetBdt: 50000 };
+  const { deps } = dependencies({
+    loadSession: async (id) => ({ id, profile: current, lastResult: null }),
+    interpretFarmerTurn: async () => ({
+      kind: "general",
+      assistant: "Your current budget is BDT 100,000.",
+      pendingField: "",
+      patch: {},
+      changedFields: [],
+      selectedCropId: "",
+    }),
+    getMissingFields: () => [],
+    answerGeneralFarmerQuestion: async () => "Your current budget is BDT 100,000.",
+    memoryService: {
+      load: async () => ({ profile: stale, preferences: {}, conversationSummary: "" }),
+      savePlan: async (_id, value) => value,
+      appendConversationTurn: async (_id, value) => value,
+    },
+  });
+
+  const result = await createPlanningWorkflow(deps)({
+    action: "chat",
+    sessionId: "newer-budget-session",
+    memoryId: "farm_0123456789abcdefghijklmn",
+    message: "What budget do you remember?",
+  });
+
+  assert.equal(result.profile.budgetBdt, 100000);
+});
+
+test("LLM turn interpretation can request another crop plan after a completed plan", async () => {
+  const { deps } = dependencies({
+    loadSession: async (id) => ({
+      id,
+      profile: completeProfile(),
+      lastResult: { selectedCropId: "mustard" },
+    }),
+    interpretFarmerTurn: async () => ({
+      kind: "request_plan",
+      assistant: "I will create a fresh maize plan using your saved farm details.",
+      pendingField: "",
+      patch: {},
+      changedFields: [],
+      selectedCropId: "maize",
+    }),
+    getMissingFields: () => [],
+  });
+
+  const result = await createPlanningWorkflow(deps)({
+    action: "chat",
+    sessionId: "another-crop-plan",
+    message: "Now make another plan for maize instead.",
+  });
+
+  assert.deepEqual(result.planRequest, { action: "plan", selectedCropId: "maize" });
+  assert.match(result.assistant, /fresh maize plan/i);
 });
 
 test("chat turns persist a staged revision without replacing the existing plan", async () => {

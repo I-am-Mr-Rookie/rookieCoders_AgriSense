@@ -45,6 +45,12 @@ test("accepts Bangladesh district and common district-style locations", () => {
   }
 });
 
+test("canonicalizes Bangla district names for downstream weather and planning", () => {
+  assert.deepEqual(validateProfilePatch({ location: "গাজীপুর" }), { location: "Gazipur" });
+  assert.deepEqual(validateProfilePatch({ location: "কুমিল্লা" }), { location: "Cumilla" });
+  assert.deepEqual(validateProfilePatch({ location: "চট্টগ্রাম, বাংলাদেশ" }), { location: "Chattogram" });
+});
+
 test("extracts the canonical district from every supported location form", async () => {
   const { districtFromLocation } = await import("../server/validation.js");
   const cases = new Map([

@@ -290,3 +290,26 @@ test("does not create a session when today's BDT 5 access cannot be confirmed", 
   );
   assert.equal(sessionsCreated, 0);
 });
+
+test("explicit account deletion removes the authenticated user and returns linked memory", async () => {
+  const deleted = [];
+  const service = createAuthService({
+    store: {
+      async loadSession() {
+        return {
+          expiresAt: "2026-08-25T00:00:00.000Z",
+          user: { id: "delete-user", mobileLast4: "2101", mobileCiphertext: null },
+        };
+      },
+      async deleteUser(userId) { deleted.push(userId); return true; },
+    },
+    otpClient: {},
+    secret: "a-secure-test-secret-with-more-than-32-characters",
+    now: () => new Date("2026-07-25T01:00:00.000Z"),
+  });
+
+  const result = await service.deleteAccount("session-token");
+
+  assert.deepEqual(deleted, ["delete-user"]);
+  assert.match(result.memoryId, /^farm_/);
+});

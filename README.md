@@ -1,109 +1,59 @@
-# Rookie Coders — AgriSense Tier 2
+# AgriSense
 
-AgriSense is an evidence-backed Bangladesh farm-planning agent for the IUT 12th ICT Fest Bdapps Agentic AI Hackathon.
+**An evidence-aware AI farm companion for practical decisions in Bangladesh and beyond.**
 
-The public product opens with a focused landing page. First-time enrollment uses bdapps mobile OTP and a one-time BDT 5 prototype payment, then the farmer creates a numeric password. Returning farmers sign in with their mobile number and password without another OTP or charge. A verified mobile number resumes one PostgreSQL-backed farmer workspace across conversation sessions. The approved demonstration number is `8801845082101`; the application never requests an OTP automatically.
+AgriSense turns a farmer's everyday question into a grounded next step. People can write or speak naturally, share a plant image, ask for a seasonal plan, compare suppliers, or revise a budget without restarting the conversation. The product combines a conversational model with deterministic safety checks, local agricultural references, live weather and market sources, and compact long-term farm memory.
 
-## Implemented
+The interface is designed for Android-first use and supports English and natural Bangla. The codebase is MIT-licensed so other teams can adapt the workflow to their own crops, languages, and evidence sources.
 
-- targeted intake for location, farm size, soil, water, budget, and season;
-- live seven-day Bangladesh weather from Open-Meteo;
-- four Rabi crop recommendations influenced by farm context, weather, finance, and BARC crop-zoning evidence;
-- six dated checkpoints from land preparation through harvest;
-- deterministic fertilizer and irrigation scheduling with costs, confirmation boundaries, and rain-based irrigation adjustment;
-- optional private farm memory with create, resume, update, and forget controls;
-- streamed, expandable agent activity for requests, tools, retrieved domains, and returned data;
-- safe Markdown and GitHub-flavored Markdown rendering with raw HTML disabled;
-- light, dark, and system themes;
-- medium reasoning by default, with deterministic high-reasoning escalation for difficult comparison, simulation, optimization, and trade-off requests;
-- API-provided reasoning summaries when available, without exposing private raw chain-of-thought;
-- 1,976 indexed fact cards from nine structured public-source datasets;
-- PostgreSQL persistence with a labeled process-memory fallback;
-- per-phase weather, retrieval, agent, and total latency measurements;
-- a five-minute Open-Meteo cache with in-flight deduplication for repeated normalized locations;
-- English and natural বাংলা interface/agent response modes, with mixed Bangla/English and Banglish input understanding;
-- live web-search market prices and supplier comparisons with citations;
-- cautious image-based plant-disease assessment with no unsupported chemical advice;
-- Bangla/English Realtime voice with a dedicated listening interface and editable transcript fallback;
-- server-only bdapps OTP enrollment with opaque HttpOnly sessions, salted password hashes, and hashed mobile identities;
-- one-time BDT 5 prototype enrollment integration; recurring daily billing is locked off and no payment controls appear in the farmer workspace;
-- recovery-linked multi-session conversations and compact token-optimized memory.
+## What it does
 
-## Official feature tiers
+- **Natural farmer chat** — asks only for missing context, understands mixed Bangla/English input, and keeps the conversation human rather than form-driven.
+- **Crop and season planning** — ranks suitable crops and creates a dated calendar from land preparation through harvest, including sowing, fertilizer, irrigation, weed, pest, and harvest checkpoints.
+- **Weather-aware scheduling** — uses a fresh Bangladesh forecast to adjust irrigation and explain the change.
+- **Market intelligence** — searches current sources for market prices, marketplace options, and supplier comparisons when the feature is enabled.
+- **Plant-image assistance** — accepts an image and returns a cautious likely-cause assessment with uncertainty and safe next steps.
+- **Voice interaction** — offers Bangla/English realtime voice with an editable transcript fallback.
+- **Persistent memory** — stores a token-efficient farm summary and separate conversations in PostgreSQL so a returning farmer can continue where they left off.
+- **Transparent agent activity** — shows bounded tool calls, sources, retrieved records, timing, and API-provided summaries without exposing private chain-of-thought.
+- **Safety-first outputs** — does not present chemical recommendations without current official registry evidence and labels generated estimates separately from retrieved facts.
 
-The names below follow `Agentic_AI_Hackathon_Final_Question.pdf` exactly. "Implemented" means the path exists and has local executable evidence; it does not replace a provider-backed live demo.
+## Product boundaries
 
-| Official tier | Official capability | Status in this repository | Current implementation and evidence boundary |
-|---|---|---|---|
-| Tier 0 — Core | Conversational intake | Implemented | Collects location, farm size, soil, water, budget, and season; asks targeted questions only for missing fields. |
-| Tier 0 — Core | Live weather grounding | Implemented | Calls Open-Meteo by farm location and uses returned rainfall and temperature in crop ranking and scheduling. |
-| Tier 0 — Core | Crop recommendation | Implemented | Ranks four Rabi candidates with suitability, water need, risk, retrieved evidence, and a scaled financial estimate. |
-| Tier 0 — Core | Season plan | Implemented | Creates a dated selected-crop calendar from land preparation through harvest, including input and pest checkpoints. |
-| Tier 0 — Core | Financial projection | Implemented | Produces itemized costs, expected yield, revenue, net profit, ROI, and break-even values that change with farm inputs. |
-| Tier 0 — Core | Explained reasoning | Implemented | Names relevant farm inputs, live weather, retrieved facts, and team assumptions behind recommendations. |
-| Tier 0 — Core | Knowledge base with RAG | Implemented | Retrieves from 1,976 fact cards across nine provenance-rich public-source datasets instead of relying on model recall alone. |
-| Tier 0 — Core | Visible agent trace | Implemented | Streams bounded tool parameters, returned values, evidence, timing, and results without exposing private raw chain-of-thought. |
-| Tier 1 — Advanced | Persistent memory | Implemented; live PostgreSQL recheck pending | Supports PostgreSQL-backed farm memory and separate recovery-linked conversations; local tests use a labeled process fallback. |
-| Tier 1 — Advanced | Proactive, weather-triggered advice | Partial | A fresh forecast can delay irrigation and change the plan, but background monitoring and external alert delivery are not implemented. |
-| Tier 1 — Advanced | Fertilizer and irrigation scheduler | Implemented | Produces quantities, growth-stage timing, costs, organic-alternative boundaries, and rain-aware irrigation adjustments. |
-| Tier 1 — Advanced | Pest and disease risk | Partial | Plans include preventive checkpoints and image assistance, but a full crop-stage-weather risk/cost engine is not proven end to end. |
-| Tier 1 — Advanced | Scenario simulation | Partial | Budget and farm-detail revisions recalculate the plan; the complete rainfall-drop scenario set still needs live acceptance evidence. |
-| Tier 2 — Ambitious | Marketplace and supplier comparison | Implemented in source; live acceptance pending | Uses OpenAI web search for current supplier comparisons with visible, deduplicated citations. |
-| Tier 2 — Ambitious | Market price intelligence | Implemented in source; live acceptance pending | Retrieves current market evidence and produces a bounded recommendation; historical coverage depends on available sources. |
-| Tier 2 — Ambitious | Plant disease detection from images | Implemented in source; live acceptance pending | Sends a validated image to a vision-capable OpenAI model and returns a cautious assessment with uncertainty and no unsupported chemical advice. |
-| Tier 2 — Ambitious | bdapps Payment Gateway Integration | Partial; simulator proof pending | Includes explicit-consent OTP enrollment and a one-time BDT 5 prototype payment path. Automated tests mock bdapps; no fresh balance deduction and receipt were claimed. |
-| Tier 2 — Ambitious | Bengali or voice interaction | Implemented in source; device acceptance pending | Provides natural Bangla/English UI modes, mixed-language understanding, and OpenAI Realtime voice with an editable transcript fallback. |
+AgriSense is decision support, not a substitute for an agronomist, laboratory diagnosis, emergency service, or government advisory. Weather, prices, disease signals, and financial projections can be incomplete or stale. Confirm dates, quantities, chemical labels, and high-impact actions with a qualified local source before acting.
 
-Tier status is deliberately conservative. The unresolved provider and device gates are listed in `docs/local-stress-report-2026-07-25.md` and `docs/official-judge-audit.md`.
+The core planning path works without a model key by using the local evidence corpus and deterministic fallbacks. OpenAI, PostgreSQL, weather, payment, market-search, image, and realtime voice integrations are opt-in server-side capabilities. No credential belongs in the browser bundle or repository.
 
-## Tools and APIs
+## Architecture
 
-| Tool or API | Purpose |
-|---|---|
-| Node.js 22, Express 5 | Same-origin API server, authentication, agent orchestration, persistence, and production hosting. |
-| React 19, Vite 7 | Responsive farmer interface and production client build. |
-| PostgreSQL (`pg`) | Durable users, salted password hashes, opaque sessions, compact farm memory, conversations, and payment idempotency. |
-| OpenAI Responses API | Grounded agent responses, structured extraction, web search, reasoning summaries, and vision requests. |
-| OpenAI Realtime API | Ephemeral-credential Bangla/English speech sessions; the standard API key remains server-side. |
-| Open-Meteo API | Live seven-day Bangladesh forecast used by ranking and scheduling. |
-| bdapps OTP/CaaS service | First-time mobile verification and the explicit one-time BDT 5 prototype payment path. |
-| Local RAG datasets | 1,976 indexed fact cards from nine structured public-source agriculture datasets with provenance and confidence fields. |
-| Node test runner, contract tests, Vite build | Unit, integration, source-contract, concurrency, hostile-input, and production-build verification. |
+```text
+React + Vite farmer workspace
+          |
+          v
+Express API and conversational orchestrator
+   |       |          |          |
+   |       |          |          +--> OpenAI Responses / Realtime (optional)
+   |       |          +-------------> Open-Meteo weather (optional)
+   |       +------------------------> PostgreSQL memory, auth, sessions
+   +--------------------------------> local provenance-rich agriculture corpus
+                                      |
+                                      +--> optional bdapps payment adapter
+```
 
-## Data: collected, real, derived, and mock
+The model interprets intent and chooses among bounded tools. JavaScript remains responsible for validation, safety rules, deterministic calculations, persistence, and executing approved calls. This keeps the experience flexible without allowing a model response to bypass application invariants.
 
-| Classification | Data used | Handling and limitation |
-|---|---|---|
-| Farmer-collected | Location, farm size, soil, water, budget, season, crop choice, plan edits, preferences, and chat messages. | Used to build the farm profile and plan. PostgreSQL stores durable state when configured; local development clearly labels the in-process fallback. |
-| Authentication-collected | Mobile number, explicit payment consent, OTP result, numeric password, and session state. | Handled server-side. Passwords are salted hashes; mobile identities and recovery codes are hashed; browser sessions are opaque HttpOnly tokens. Credentials are excluded from model context and Git. |
-| Optional media | Farmer-selected plant image, microphone audio, and editable transcript. | Sent only when the farmer activates that feature. Image/audio processing is provider-backed; outputs are assistance, not a laboratory diagnosis. |
-| Real live external data | Open-Meteo forecast; OpenAI web-search results and citations; provider responses when configured. | Time-sensitive and failure-prone. The interface preserves source/freshness information and returns bounded fallbacks when a provider is unavailable. |
-| Real retrieved reference data | BARC crop zoning/fertilizer guidance, BAMIS/DAE records, and the supplied structured agriculture corpus. | Stored locally as provenance-rich fact cards. Partial or cautionary records remain labeled. |
-| Generated or derived | Crop scores, recommendations, plan text, checkpoints, schedules, cost/yield/profit projections, summaries, market synthesis, and image assessment. | Computed from farmer inputs, retrieved/live evidence, model output, and explicit team coefficients. These are decision support, not guaranteed outcomes. |
-| Team assumptions | Base costs, yields, prices, crop coefficients, and default checkpoint offsets. | Deterministic planning inputs, visibly separated from retrieved facts and subject to local expert confirmation. |
-| Mock or simulated in automated tests | OpenAI, PostgreSQL fallback behavior, bdapps OTP/payment callbacks, malformed inputs, and concurrency storms. | No OTP, SMS, subscription, or debit is sent by the automated suite. A real bdapps sandbox transaction requires explicit manual approval. |
-| Demonstration data | The fresh Gazipur demo profile and approved demonstration mobile number. | Synthetic judge path only; starting it creates an isolated session and does not represent a real farmer. |
+## Stack
 
-## Safety and truth boundaries
-
-| Category | Boundary |
-|---|---|
-| Live | Open-Meteo responses; OpenAI responses when configured; PostgreSQL writes when configured. |
-| Retrieved | BARC crop zoning and fertilizer guidance, BAMIS/DAE records, and supplied structured sources with provenance/confidence fields. |
-| Team assumptions | Base crop coefficients, costs, yields, prices, and default checkpoint offsets. |
-| Farmer confirmation | Fertilizer operations are never presented as automatically applied. |
-| Chemicals | No chemical recommendation is made without current official registry evidence. |
-| Memory | The `farm_...` recovery code is a bearer credential. It is hashed before storage and redacted from activity, traces, logs, and model context. |
-| Authentication | Raw mobile numbers, OTPs, session tokens, and operator credentials are never placed in browser bundles, activity traces, or model prompts. |
-| Payments | The farmer explicitly consents before first-time OTP enrollment. Returning password logins cannot trigger another debit, and the farmer workspace exposes no payment controls. |
-| Voice | Bangla speech may be imperfect; prices, dates, quantities, and chemicals require visible text confirmation. |
-| Deferred | External alert delivery remains out of scope. |
-
-The corpus contains partial and cautionary records. Exact agronomic dates and financial assumptions require local expert validation.
+- Node.js 22+, Express 5, PostgreSQL (`pg`)
+- React 19, Vite 7, `react-markdown` with GFM and raw HTML disabled
+- OpenAI Responses API and Realtime API (optional)
+- Open-Meteo weather API (optional)
+- Local JSON agriculture corpus with source, page/reference, category, and confidence metadata
+- Optional `services/bdapps-payment` Express/React adapter for Bangladesh CaaS/OTP flows
 
 ## Run locally
 
-Requires Node.js 22+.
+Requires Node.js 22 or newer and npm.
 
 ```powershell
 Copy-Item .env.example .env
@@ -112,71 +62,79 @@ npm.cmd run check
 npm.cmd start
 ```
 
-Open <http://localhost:3001>. The canonical entry is a blank farmer conversation. **Start fresh Gazipur demo** creates a new isolated demonstration session on every run.
+Open <http://localhost:3001>. For an interactive development session, run `npm.cmd run dev` instead.
 
-Environment variables:
+The server can run in a clearly labeled process-memory fallback when PostgreSQL is not configured. Configure PostgreSQL before evaluating durable accounts, recovery-linked sessions, or cross-device memory.
+
+### Environment
+
+Copy `.env.example` and fill only the values required for the capabilities you want to exercise:
 
 ```text
 OPENAI_API_KEY=server-side-only
 OPENAI_MODEL=gpt-5.6
 OPENAI_REASONING_EFFORT=auto
 OPENAI_REALTIME_MODEL=gpt-realtime-2.1
-DATABASE_URL=server-side-only
-DATABASE_SSL_REJECT_UNAUTHORIZED=true
-AUTH_SESSION_SECRET=at-least-32-random-characters
-PAYMENT_SERVICE_URL=https://rookiecoders.tech/api/bdapps
-PAYMENT_DASHBOARD_URL=https://rookiecoders.tech/payments/
+OPENAI_REALTIME_VOICE=marin
+DATABASE_URL=postgres://...
+AUTH_SESSION_SECRET=use-a-long-random-value
+PAYMENT_SERVICE_URL=http://127.0.0.1:4317/api/bdapps
 PAYMENT_ADMIN_TOKEN=server-side-only
-APP_REVISION=git-revision
-PORT=3001
 ```
 
-Never place secrets in Git, the browser client, activity output, screenshots, or model prompts. Keep database certificate verification enabled.
+Keep `DATABASE_SSL_REJECT_UNAUTHORIZED=true` for managed databases. Never commit `.env`, provider keys, payment credentials, OTPs, session tokens, or database URLs that contain passwords.
 
-## Tier 1 local verification
+## Optional payment adapter
 
-Verified locally on 25 July 2026:
+`services/bdapps-payment/` is a separately runnable Express/React adapter for OTP, CaaS balance, payment instruments, callbacks, and one-time prototype charges. It is intentionally isolated from the farmer client and keeps provider credentials server-side.
 
-- `npm.cmd run check`: 246/246 tests passed and the Vite production build passed;
-- memory create/resume/reset API lifecycle passed without printing the recovery credential;
-- streamed planning returned 11 ordered activity events, two schedule items, and a final four-crop plan;
-- desktop and 390×844 browser checks found zero console errors and no horizontal overflow;
-- crop-card regression: opening the first card changed card heights from `[248,248,248,248]` to `[340,248,248,248]`, with exactly one disclosure open;
-- dark mode applied immediately and survived reload;
-- successful cold weather + deterministic planning completed in about 2.2 seconds during the measured run;
-- a cached run completed in 87 ms end-to-end;
-- one preceding cold Open-Meteo attempt reached its seven-second network timeout, identifying external network reliability as the main measured latency risk.
+```powershell
+cd services/bdapps-payment
+Copy-Item .env.example .env
+npm.cmd install
+docker compose up -d db
+npm.cmd run db:migrate
+npm.cmd test
+```
 
-The local verification intentionally ran without OpenAI or PostgreSQL secrets, so it exercised the deterministic grounded explanation and process-memory fallback. Model latency must be measured separately in the target VPS environment before promising a production sub-10-second result.
+The automated suite mocks provider calls. It does not send SMS, request OTPs, or debit an account.
 
-## Authentication and payment topology
+## Verification
+
+From the repository root:
+
+```powershell
+npm.cmd run check
+npm.cmd audit --omit=dev
+git diff --check
+```
+
+The tests cover validation, intent routing, memory/session lifecycle, weather and evidence handling, streamed agent activity, Markdown, themes, authentication, payment contracts, image assistance, and realtime voice contracts. Provider-backed calls and real charges require separate, explicit manual approval.
+
+## Repository map
 
 ```text
-Browser -> AgriSense HTTPS -> bdapps OTP/payment service -> bdapps
-                         \-> PostgreSQL account, session, memory, and chat state
-                         \-> OpenAI Responses and Realtime APIs
+src/                 React application, chat, themes, voice, Markdown, evidence UI
+server/              Express routes, orchestration, validation, persistence, providers
+shared/              Server/client-safe redaction and assistant contracts
+data/structured/     Provenance-rich agriculture reference records
+tests/               Unit, contract, integration, and hostile-input tests
+services/            Optional bdapps payment adapter
+docs/                Architecture, deployment, and contributor guidance
 ```
 
-`PAYMENT_ADMIN_TOKEN`, bdapps credentials, the database URL, and OpenAI keys are server-only. The vendored payment service is in `services/bdapps-payment/`; its live `.env` from the private handoff ZIP is intentionally excluded from Git.
+## Deployment notes
 
-## Deployment
+See [`docs/deployment-vps.md`](docs/deployment-vps.md) for a provider-neutral release runbook. The live application, when configured, uses a versioned Node release, PostgreSQL, HTTPS, and a separate payment service. Deployment credentials and production `.env` files stay outside Git.
 
-The production release uses the existing DigitalOcean droplet and same-origin Nginx routes:
+## Contributing
 
-- farmer product: `https://rookiecoders.tech/`
-- payment backend: `https://rookiecoders.tech/api/bdapps`
-- protected payment operations: `https://rookiecoders.tech/payments/`
+Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a change. Contributions should preserve source provenance, explicit safety boundaries, keyboard accessibility, reduced-motion behavior, and the distinction between retrieved facts, team assumptions, and model-generated text.
 
-Run `npm.cmd run check` before deployment. On the VPS, install production dependencies, build the Vite bundle, run the PostgreSQL initialization through server startup, switch the versioned release symlink, restart the service, and verify `/api/health`, `/api/payments/status`, and the landing page. Never run a real debit as a smoke test.
+## Security
 
-## Evidence
+Please report security issues privately as described in [`SECURITY.md`](SECURITY.md). Do not open a public issue containing credentials, personal data, payment details, or a reproducible account takeover path.
 
-- `docs/tier1/final plan.html` — approved Thinker-to-Executor plan.
-- `docs/tier1-validation.md` — Tier 1 test, API, browser, and latency evidence.
-- `docs/tier1-defect-ledger.md` — baseline, fix, and retest register.
-- `docs/superpowers/specs/2026-07-25-agrisense-authenticated-farmer-agent-design.md` — authenticated Tier 2 product contract.
-- `services/bdapps-payment/docs/KOUSHIK_INTEGRATION.md` — payment service integration and operations handoff.
-- `currentprogress.md` — current release state and remaining risks.
-- `evaluation.html` — original Tier 0 judge-facing acceptance ledger.
+## License
 
-Public repository: <https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense>
+AgriSense is released under the [MIT License](LICENSE).

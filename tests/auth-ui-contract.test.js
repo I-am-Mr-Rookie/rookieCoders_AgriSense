@@ -32,6 +32,16 @@ test("agent workspace is gated by server-restored authentication", () => {
   assert.equal(appSource.includes("OPENAI_API_KEY"), false);
 });
 
+test("profile settings hide explicit account deletion behind confirmation", () => {
+  for (const text of [
+    'fetch("/api/auth/account"',
+    'method: "DELETE"',
+    "showAccountSettings",
+    "confirmAccountDeletion",
+    "Delete account",
+  ]) assert.ok(appSource.includes(text), `missing account deletion contract: ${text}`);
+});
+
 test("OTP dialog presents safe provider diagnostics when enrollment is rejected", () => {
   assert.ok(authSource.includes("data.providerCode"));
   assert.ok(authSource.includes("data.providerDetail"));

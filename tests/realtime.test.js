@@ -56,7 +56,7 @@ test("mints a bounded Bangla-first Realtime secret without returning the standar
     type: "semantic_vad",
     eagerness: "low",
     create_response: true,
-    interrupt_response: true,
+    interrupt_response: false,
   });
   assert.match(captured.body.session.instructions, /Bangla/i);
   assert.match(captured.body.session.instructions, /brief spoken preamble/i);
@@ -185,6 +185,7 @@ test("browser Realtime session uses only an ephemeral credential and closes ever
     }
   }
   const events = [];
+  let mediaConstraints;
   const session = await startRealtimeSession({
     tokenRequest: { memoryId: "farm_code", sessionId: "session-1" },
     fetchImpl: async (url, options) => {
@@ -206,7 +207,8 @@ test("browser Realtime session uses only an ephemeral credential and closes ever
     },
     navigatorObject: {
       mediaDevices: {
-        async getUserMedia() {
+        async getUserMedia(constraints) {
+          mediaConstraints = constraints;
           return stream;
         },
       },
@@ -218,6 +220,14 @@ test("browser Realtime session uses only an ephemeral credential and closes ever
   assert.equal(calls[1].url, "https://api.openai.com/v1/realtime/calls");
   assert.equal(calls[1].options.headers.Authorization, "Bearer ek_browser_only");
   assert.equal(session.peerConnection.remoteDescription.sdp, "answer-sdp");
+  assert.deepEqual(mediaConstraints, {
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      channelCount: 1,
+    },
+  });
   session.sendEvent({ type: "response.create" });
   assert.deepEqual(JSON.parse(session.dataChannel.sent[0]), { type: "response.create" });
 

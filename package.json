@@ -1,7 +1,15 @@
 {
   "name": "rookiecoders-agrisense",
   "version": "0.1.0",
-  "private": true,
+  "description": "An evidence-aware AI farm companion with Bangla/English chat, planning, memory, market research, image assistance, and voice.",
+  "private": false,
+  "license": "MIT",
+  "author": "Koushik Sadhak Jeet",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/I-am-Mr-Rookie/rookieCoders_AgriSense.git"
+  },
+  "homepage": "https://rookiecoders.tech",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"vite\" \"node --env-file-if-exists=.env --watch server/index.js\"",

@@ -7,6 +7,7 @@ import {
   validateDiseaseImage,
   validateMarketRequest,
 } from "../server/tier2-validation.js";
+import { responseLanguageName } from "../src/i18n.js";
 import { ValidationError } from "../server/validation.js";
 
 test("normalizes a bounded Bangladesh supplier-comparison request", () => {
@@ -82,6 +83,14 @@ test("validates a supported disease image data URL", () => {
   assert.equal(result.byteLength, 5);
   assert.equal(result.crop, "Tomato");
   assert.equal(result.note, "Brown spots appeared yesterday");
+});
+
+test("accepts the UI Bangla language guidance for disease images", () => {
+  const result = validateDiseaseImage({
+    imageDataUrl: "data:image/jpeg;base64,aGVsbG8=",
+    responseLanguage: responseLanguageName("bn"),
+  });
+  assert.equal(result.responseLanguage, responseLanguageName("bn"));
 });
 
 test("rejects unsupported, malformed, and oversized disease images", () => {

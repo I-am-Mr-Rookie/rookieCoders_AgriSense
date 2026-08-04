@@ -16,6 +16,7 @@ import {
   completeDailyAccess,
   databaseMode,
   deleteAuthSession,
+  deleteAuthUser,
   deleteLoginChallenge,
   deleteSession,
   initializeDatabase,
@@ -36,6 +37,7 @@ import {
   briefCropCandidates,
   explainRecommendation,
   extractProfilePatch,
+  interpretFarmerTurn,
   openAiMode,
 } from "./openai.js";
 import { createHttpErrorHandler } from "./http.js";
@@ -69,7 +71,7 @@ const paymentGateway = createPaymentGateway({
 const dailyAccessService = createDailyAccessService({
   store: { loadDailyAccess, claimDailyAccess, completeDailyAccess },
   gateway: paymentGateway,
-  // The hackathon prototype charges once during OTP enrollment. Returning
+  // The prototype charges once during OTP enrollment. Returning
   // password logins must never trigger another provider debit, even if an old
   // deployment environment still contains DAILY_BILLING_ENABLED=true.
   enabled: false,
@@ -80,6 +82,7 @@ const authService = createAuthService({
     createSession: createAuthSession,
     loadSession: loadAuthSession,
     deleteSession: deleteAuthSession,
+    deleteUser: deleteAuthUser,
     createLoginChallenge,
     deleteLoginChallenge,
     consumeLoginChallenge,
@@ -129,6 +132,7 @@ app.post("/api/auth/password/setup", authHandlers.passwordSetup);
 app.post("/api/auth/password/login", authHandlers.passwordLogin);
 app.get("/api/auth/session", authHandlers.session);
 app.post("/api/auth/logout", authHandlers.logout);
+app.delete("/api/auth/account", authHandlers.deleteAccount);
 app.get("/api/payments/status", paymentStatusHandler);
 app.post("/api/subscription/cancel", subscriptionCancelHandler);
 
@@ -156,15 +160,12 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-app.get(["/evaluation", "/evaluation.html"], (_req, res) => {
-  res.sendFile(path.resolve(__dirname, "../evaluation.html"));
-});
-
 function workflowFor(persistence) {
   return createPlanningWorkflow({
     loadSession,
     saveSession: (session) => persistence.saveMergedProfile(session),
     extractProfilePatch,
+    interpretFarmerTurn,
     interpretConversationTurn,
     validateProfilePatch,
     getMissingFields,

@@ -130,5 +130,15 @@ export function createAuthHandlers({ authService, memoryService, secureCookies =
         failure(response, error);
       }
     },
+    deleteAccount: async (request, response) => {
+      try {
+        const deleted = await authService.deleteAccount(tokenFrom(request));
+        await memoryService.reset(deleted.memoryId);
+        response.set("set-cookie", clearCookie({ secure: secureCookies }));
+        response.json({ authenticated: false, deleted: true });
+      } catch (error) {
+        failure(response, error);
+      }
+    },
   };
 }

@@ -228,6 +228,21 @@ export async function deleteAuthSession(sessionHash) {
   return result.rowCount > 0;
 }
 
+export async function deleteAuthUser(userId) {
+  const db = getPool();
+  if (!db) {
+    const entry = [...authUsers.entries()].find(([, user]) => user.id === userId);
+    if (!entry) return false;
+    authUsers.delete(entry[0]);
+    for (const [hash, session] of authSessions) {
+      if (session.userId === userId) authSessions.delete(hash);
+    }
+    return true;
+  }
+  const result = await db.query("DELETE FROM auth_users WHERE id = $1", [userId]);
+  return result.rowCount === 1;
+}
+
 export async function createLoginChallenge(record) {
   const db = getPool();
   if (!db) {

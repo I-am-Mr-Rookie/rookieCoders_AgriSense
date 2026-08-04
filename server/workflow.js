@@ -41,19 +41,25 @@ export function createPlanningWorkflow(deps) {
     const session = await deps.loadSession(sessionId);
     const previousLastResult = session.lastResult;
     let memory = null;
+    let memoryMissing = false;
     if (body.memoryId) {
       memory = await deps.memoryService.load(body.memoryId);
-      if (!memory) throw new Error("Farmer memory was not found.");
-      session.profile = { ...session.profile, ...memory.profile };
-      const memorySession = memory.sessions?.find((item) => item.id === body.memorySessionId);
-      if (!session.lastResult && memorySession?.lastResult) {
-        session.lastResult = memorySession.lastResult;
-      }
-      if (!isChatTurn) {
-        await emit("memory.loaded", "Saved farm memory loaded", "completed", {
-          profileFields: Object.keys(memory.profile || {}),
-          hasPreviousPlan: Boolean(memory.lastResult),
-        });
+      if (!memory) {
+        memoryMissing = true;
+      } else {
+        // Memory seeds a new session, but facts already established in the
+        // active session are newer and must not be overwritten by stale memory.
+        session.profile = { ...memory.profile, ...session.profile };
+        const memorySession = memory.sessions?.find((item) => item.id === body.memorySessionId);
+        if (!session.lastResult && memorySession?.lastResult) {
+          session.lastResult = memorySession.lastResult;
+        }
+        if (!isChatTurn) {
+          await emit("memory.loaded", "Saved farm memory loaded", "completed", {
+            profileFields: Object.keys(memory.profile || {}),
+            hasPreviousPlan: Boolean(memory.lastResult),
+          });
+        }
       }
     }
 
@@ -63,18 +69,45 @@ export function createPlanningWorkflow(deps) {
         ? body.preferences.autoAdjustIrrigation
         : memory?.preferences?.autoAdjustIrrigation !== false,
     };
+    const recoverMissingMemory = async () => {
+      if (!body.memoryId || !memoryMissing) return memory;
+      memory = await deps.memoryService.ensure(body.memoryId, {
+        profile: session.profile,
+        lastResult: session.lastResult,
+        preferences,
+        conversationSummary: "",
+        sessions: body.memorySessionId
+          ? [{
+              id: String(body.memorySessionId),
+              title: "Recovered conversation",
+              messages: [],
+              lastResult: session.lastResult,
+              summary: "",
+            }]
+          : [],
+      });
+      memoryMissing = false;
+      return memory;
+    };
     if (isChatTurn) {
       const currentPlan = session.lastResult ?? memory?.lastResult ?? null;
-      const turn = deps.interpretConversationTurn(message, session.profile, {
+      const turnContext = {
         pendingField: body.pendingField,
         awaitingField: body.awaitingField === true,
         responseLanguage: body.responseLanguage,
-      });
+        previousPlan: currentPlan,
+      };
+      const usesLlmTurnInterpreter = typeof deps.interpretFarmerTurn === "function";
+      const turn = usesLlmTurnInterpreter
+        ? await deps.interpretFarmerTurn(message, session.profile, turnContext, signal)
+        : deps.interpretConversationTurn(message, session.profile, turnContext);
       let patch = {};
-      if (turn.kind === "revision_staged") {
+      if (turn.kind === "revision_staged" || turn.kind === "request_plan") {
         patch = deps.validateProfilePatch(turn.patch);
       } else if (turn.kind === "general") {
-        patch = isDirectAssistanceRequest(message)
+        patch = usesLlmTurnInterpreter
+          ? deps.validateProfilePatch(turn.patch ?? {})
+          : isDirectAssistanceRequest(message)
           ? {}
           : deps.validateProfilePatch(
               body.profilePatch ?? await deps.extractProfilePatch(message, session.profile, signal),
@@ -86,12 +119,14 @@ export function createPlanningWorkflow(deps) {
         session.profile = { ...session.profile, ...patch };
         await deps.saveSession(session);
       }
+      await recoverMissingMemory();
 
       const missingFields = deps.getMissingFields(session.profile);
       const changedFields = Object.keys(patch);
-      const readyToPlan = changedFields.length > 0 && missingFields.length === 0;
+      const planRequested = turn.kind === "request_plan";
+      const readyToPlan = (changedFields.length > 0 || planRequested) && missingFields.length === 0;
       const planStale = readyToPlan && Boolean(currentPlan);
-      const generalAssistance = turn.kind === "general" && changedFields.length === 0
+      const generalAssistance = turn.kind === "general" && changedFields.length === 0 && !turn.assistant
         ? await deps.answerGeneralFarmerQuestion({
             message,
             currentProfile: session.profile,
@@ -164,6 +199,12 @@ export function createPlanningWorkflow(deps) {
         missingFields: generalAssistance ? [] : missingFields,
         readyToPlan,
         planStale,
+        planRequest: planRequested && missingFields.length === 0
+          ? {
+              action: turn.selectedCropId ? "plan" : "analyze",
+              ...(turn.selectedCropId ? { selectedCropId: turn.selectedCropId } : {}),
+            }
+          : null,
         memory: savedMemory,
       };
     }
@@ -178,6 +219,7 @@ export function createPlanningWorkflow(deps) {
     throwIfAborted();
     session.profile = { ...session.profile, ...patch };
     await deps.saveSession(session);
+    await recoverMissingMemory();
     await emit("profile.updated", "Farm profile updated", "completed", {
       updatedFields: Object.keys(patch),
       completeFields: Object.keys(session.profile),

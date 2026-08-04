@@ -90,6 +90,71 @@ const DISTRICT_ALIASES = new Map([
   ["khagrachari", "Khagrachhari"],
   ["maulvibazar", "Moulvibazar"],
   ["moulavi bazar", "Moulvibazar"],
+  ["বাগেরহাট", "Bagerhat"],
+  ["বান্দরবান", "Bandarban"],
+  ["বরগুনা", "Barguna"],
+  ["বরিশাল", "Barishal"],
+  ["ভোলা", "Bhola"],
+  ["বগুড়া", "Bogura"],
+  ["বগুড়া", "Bogura"],
+  ["ব্রাহ্মণবাড়িয়া", "Brahmanbaria"],
+  ["চাঁদপুর", "Chandpur"],
+  ["চাঁপাইনবাবগঞ্জ", "Chapainawabganj"],
+  ["চট্টগ্রাম", "Chattogram"],
+  ["চুয়াডাঙ্গা", "Chuadanga"],
+  ["কক্সবাজার", "Cox's Bazar"],
+  ["কুমিল্লা", "Cumilla"],
+  ["ঢাকা", "Dhaka"],
+  ["দিনাজপুর", "Dinajpur"],
+  ["ফরিদপুর", "Faridpur"],
+  ["ফেনী", "Feni"],
+  ["গাইবান্ধা", "Gaibandha"],
+  ["গাজীপুর", "Gazipur"],
+  ["গোপালগঞ্জ", "Gopalganj"],
+  ["হবিগঞ্জ", "Habiganj"],
+  ["জামালপুর", "Jamalpur"],
+  ["যশোর", "Jashore"],
+  ["ঝালকাঠি", "Jhalokati"],
+  ["ঝিনাইদহ", "Jhenaidah"],
+  ["জয়পুরহাট", "Joypurhat"],
+  ["খাগড়াছড়ি", "Khagrachhari"],
+  ["খুলনা", "Khulna"],
+  ["কিশোরগঞ্জ", "Kishoreganj"],
+  ["কুড়িগ্রাম", "Kurigram"],
+  ["কুষ্টিয়া", "Kushtia"],
+  ["লক্ষ্মীপুর", "Lakshmipur"],
+  ["লালমনিরহাট", "Lalmonirhat"],
+  ["মাদারীপুর", "Madaripur"],
+  ["মাগুরা", "Magura"],
+  ["মানিকগঞ্জ", "Manikganj"],
+  ["মেহেরপুর", "Meherpur"],
+  ["মৌলভীবাজার", "Moulvibazar"],
+  ["মুন্সিগঞ্জ", "Munshiganj"],
+  ["ময়মনসিংহ", "Mymensingh"],
+  ["নওগাঁ", "Naogaon"],
+  ["নড়াইল", "Narail"],
+  ["নারায়ণগঞ্জ", "Narayanganj"],
+  ["নরসিংদী", "Narsingdi"],
+  ["নাটোর", "Natore"],
+  ["নেত্রকোনা", "Netrokona"],
+  ["নীলফামারী", "Nilphamari"],
+  ["নোয়াখালী", "Noakhali"],
+  ["পাবনা", "Pabna"],
+  ["পঞ্চগড়", "Panchagarh"],
+  ["পটুয়াখালী", "Patuakhali"],
+  ["পিরোজপুর", "Pirojpur"],
+  ["রাজবাড়ী", "Rajbari"],
+  ["রাজশাহী", "Rajshahi"],
+  ["রাঙ্গামাটি", "Rangamati"],
+  ["রংপুর", "Rangpur"],
+  ["সাতক্ষীরা", "Satkhira"],
+  ["শরীয়তপুর", "Shariatpur"],
+  ["শেরপুর", "Sherpur"],
+  ["সিরাজগঞ্জ", "Sirajganj"],
+  ["সুনামগঞ্জ", "Sunamganj"],
+  ["সিলেট", "Sylhet"],
+  ["টাঙ্গাইল", "Tangail"],
+  ["ঠাকুরগাঁও", "Thakurgaon"],
 ]);
 const SAFE_LOCATION_COMPONENT = /^[\p{L}\p{M}][\p{L}\p{M} .()'\u2019-]*$/u;
 const DECIMAL_NUMBER = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
@@ -121,10 +186,16 @@ function normalizeNumber(value, field, maximum) {
 
 function normalizeLocationComponent(value) {
   return value
+    .normalize("NFC")
     .trim()
     .toLowerCase()
     .replace(/[\u2018\u2019`]/g, "'")
     .replace(/\s+/g, " ");
+}
+
+function isBangladeshComponent(value) {
+  const normalized = normalizeLocationComponent(value);
+  return normalized === "bangladesh" || normalized === "বাংলাদেশ";
 }
 
 function canonicalDistrict(value) {
@@ -150,12 +221,12 @@ export function districtFromLocation(location) {
     return null;
   }
 
-  if (normalizeLocationComponent(components.at(-1)) === "bangladesh") {
+  if (isBangladeshComponent(components.at(-1))) {
     components.pop();
   }
   if (
     components.length !== 1
-    || components.some((component) => normalizeLocationComponent(component) === "bangladesh")
+    || components.some(isBangladeshComponent)
   ) {
     return null;
   }
@@ -191,10 +262,11 @@ export function validateProfilePatch(patch) {
       throw new ValidationError("location must be a non-empty Bangladesh location.");
     }
     const location = patch.location.trim();
-    if (!districtFromLocation(location)) {
+    const district = districtFromLocation(location);
+    if (!district) {
       throw new ValidationError("location must be in Bangladesh.");
     }
-    normalized.location = location;
+    normalized.location = /[^\x00-\x7f]/.test(location) ? district : location;
   }
 
   if (Object.hasOwn(patch, "farmSizeAcres")) {

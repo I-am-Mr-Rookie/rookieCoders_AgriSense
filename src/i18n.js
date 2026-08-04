@@ -326,7 +326,7 @@ export function t(language, key) {
 
 export function responseLanguageName(language) {
   if (language === "bn") {
-    return "natural, concise Bangla as used in Bangladesh, written in Bengali script; use familiar farming words, avoid word-for-word translation, bureaucratic language, unnecessary English, and repetition";
+    return "natural, concise Bangla used in Bangladesh, in Bengali script; avoid robotic literal translation";
   }
   return "clear, concise English";
 }

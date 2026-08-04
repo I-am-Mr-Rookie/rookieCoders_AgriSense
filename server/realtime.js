@@ -57,7 +57,10 @@ function sessionConfiguration(model, voice) {
             type: "semantic_vad",
             eagerness: "low",
             create_response: true,
-            interrupt_response: true,
+            // Prevent the device speaker echo from cancelling the assistant
+            // after the first few words. Farmers can still use the explicit
+            // stop control when they want to end a response.
+            interrupt_response: false,
           },
           transcription: {
             model: "gpt-4o-mini-transcribe",

@@ -1,9 +1,9 @@
-# AgriSense VPS release runbook
+# AgriSense release runbook
 
 ## Production topology
 
-- Host: DigitalOcean droplet `159.65.85.196`.
-- Public origin: `https://rookiecoders.tech`.
+- Host: a private VPS or managed host with HTTPS.
+- Public origin: the configured application domain.
 - Farmer application: `/` with API routes under `/api/`.
 - Existing payment service: `/api/bdapps/` and protected console `/payments/`.
 - Payment systemd unit: `agrisense-payment.service`, internal port `4317`.
@@ -14,17 +14,17 @@
 ```text
 NODE_ENV=production
 PORT=3001
-OPENAI_API_KEY=...
+OPENAI_API_KEY=<server-secret>
 OPENAI_MODEL=gpt-5.6
 OPENAI_REALTIME_MODEL=gpt-realtime-2.1
 OPENAI_REALTIME_VOICE=marin
-OPENAI_SAFETY_SECRET=...
-DATABASE_URL=...
+OPENAI_SAFETY_SECRET=<server-only-random-value>
+DATABASE_URL=<managed-database-url>
 DATABASE_SSL_REJECT_UNAUTHORIZED=true
 AUTH_SESSION_SECRET=<at least 32 cryptographically random characters>
 PAYMENT_SERVICE_URL=http://127.0.0.1:4317/api/bdapps
-PAYMENT_DASHBOARD_URL=https://rookiecoders.tech/payments/
-PAYMENT_ADMIN_TOKEN=...
+PAYMENT_DASHBOARD_URL=https://your-domain.example/payments/
+PAYMENT_ADMIN_TOKEN=<server-secret>
 APP_REVISION=<git commit>
 ```
 
@@ -43,8 +43,8 @@ Never put these values in Git, a browser bundle, logs, screenshots, agent activi
    - `GET /api/health`
    - `GET /api/payments/status`
    - landing page and language controls
-   - OTP request only after explicit approval from Koushik
-   - OTP verification using the code Koushik receives
+   - OTP request only after explicit operator approval
+   - OTP verification using the code delivered to the authorized test handset
    - dashboard, memory restore, market/image/voice fallbacks, logout
 9. If any release gate fails, restore the previous `current` symlink and restart the prior service.
 
@@ -52,5 +52,5 @@ Never put these values in Git, a browser bundle, logs, screenshots, agent activi
 
 - Do not perform a real CaaS direct debit during smoke verification.
 - Do not automatically retry any payment with an unknown outcome.
-- Do not request OTP for `8801845082101` until Koushik explicitly approves the live request.
-- Stress, evolution, patch, and re-evaluation loops begin only after the pushed build has been handed to Koushik.
+- Do not request an OTP for a real number during an automated smoke test.
+- Run any stress, evolution, patch, or re-evaluation loop only after the release has been handed to the operator.

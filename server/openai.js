@@ -1,14 +1,15 @@
 import OpenAI from "openai";
 import { runToolLoop } from "./agent.js";
+import { interpretConversationTurn } from "./conversation.js";
 
 const model = process.env.OPENAI_MODEL || "gpt-5.6";
 const configuredEffort = process.env.OPENAI_REASONING_EFFORT;
 
-export function selectReasoningEffort(message = "") {
-  if (configuredEffort === "medium" || configuredEffort === "high") return configuredEffort;
+export function selectReasoningEffort(message = "", configured = configuredEffort) {
+  if (configured === "medium") return "medium";
   const text = String(message);
   const hardPattern = /\bwhat if\b|\bsimulat(?:e|ion)\b|\bcompare\b|\btrade[- ]?offs?\b|\boptimi[sz]e\b/i;
-  return text.length > 600 || hardPattern.test(text) ? "high" : "medium";
+  return hardPattern.test(text) ? "high" : "medium";
 }
 
 export function createOpenAiClient() {
@@ -21,6 +22,120 @@ function client() {
 
 function parseJson(text) {
   return JSON.parse(text.replace(/^```json\s*/i, "").replace(/```$/i, "").trim());
+}
+
+const TURN_INTENTS = new Set([
+  "general",
+  "profile_update",
+  "clarification",
+  "request_plan",
+  "request_crop_plan",
+]);
+
+function compactPatch(profilePatch = {}) {
+  return Object.fromEntries(
+    Object.entries(profilePatch).filter(([, value]) => value !== null && value !== undefined),
+  );
+}
+
+export async function interpretFarmerTurn(
+  message,
+  currentProfile = {},
+  context = {},
+  signal,
+  openai = client(),
+) {
+  if (!openai?.responses?.create) {
+    return interpretConversationTurn(message, currentProfile, context);
+  }
+  try {
+    const response = await openai.responses.create({
+      model,
+      reasoning: { effort: "low" },
+      text: {
+        format: {
+          type: "json_schema",
+          name: "farmer_conversation_turn",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              intent: { type: "string", enum: [...TURN_INTENTS] },
+              profilePatch: {
+                type: "object",
+                properties: {
+                  location: { type: ["string", "null"] },
+                  farmSizeAcres: { type: ["number", "null"] },
+                  soilType: { type: ["string", "null"], enum: ["loam", "sandy loam", "clay loam", null] },
+                  waterAvailability: { type: ["string", "null"], enum: ["irrigated", "rainfed", "limited", null] },
+                  budgetBdt: { type: ["number", "null"] },
+                  targetSeason: { type: ["string", "null"], enum: ["Rabi", null] },
+                },
+                required: ["location", "farmSizeAcres", "soilType", "waterAvailability", "budgetBdt", "targetSeason"],
+                additionalProperties: false,
+              },
+              requestedCropId: { type: ["string", "null"], enum: ["mustard", "potato", "maize", "boro-rice", null] },
+              pendingField: { type: ["string", "null"], enum: ["location", "farmSizeAcres", "soilType", "waterAvailability", "budgetBdt", "targetSeason", null] },
+              assistant: { type: "string" },
+            },
+            required: ["intent", "profilePatch", "requestedCropId", "pendingField", "assistant"],
+            additionalProperties: false,
+          },
+        },
+      },
+      input: [
+        {
+          role: "system",
+          content: `Role stack:
+- Primary role: Bangladesh farmer conversation and plan-routing agent.
+- Tool/platform role: AgriSense structured-turn interpreter and workflow orchestrator.
+- Validation role: Memory-consistency and agricultural-safety auditor.
+
+You are AgriSense's conversational farm-intake and plan-routing intelligence for Bangladeshi farmers.
+
+Understand natural Bangla, English, Banglish transliteration, mixed speech-to-text, rural units, shorthand, and harmless dictation mistakes. Do not require exact phrases, fixed sentence structures, or character-for-character matches.
+
+Decide the farmer's real intent: ordinary help, updating saved farm facts, answering a clarification, requesting a new plan, or requesting another supported crop plan. A farmer may change direction at any time, including after a completed plan. If they ask for another maize, potato, mustard, or Boro rice plan, route it as a fresh crop-plan request instead of refusing because an older plan exists.
+
+Newer explicit facts override older memory. Put only facts explicitly stated in this turn into profilePatch; never copy unchanged saved fields into the patch and never invent missing facts. Normalize 50k to 50000 BDT, Bangladesh bigha to 0.3306 acre, common district spellings, doash to loam, bele doash to sandy loam, etel mati to clay loam, and explicit Robi/Rabi to Rabi.
+
+Ask at most one natural, useful question when a genuinely required value is missing. Do not mechanically list every profile field. Use the saved context intelligently and acknowledge meaningful updates, especially corrected budget, land, location, water, soil, season, or crop choices.
+
+The assistant text must be concise, warm, non-robotic, and written in the requested response language. State the understood action or the single next question. Never expose chain-of-thought, invent evidence, recommend an unverified chemical, or claim a plan has been generated before the planning workflow runs.`,
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            farmerMessage: String(message || "").slice(0, 4000),
+            currentProfile,
+            previousPlan: context.previousPlan ?? null,
+            pendingField: context.pendingField || null,
+            awaitingField: context.awaitingField === true,
+            responseLanguage: context.responseLanguage || "English",
+          }),
+        },
+      ],
+    }, { signal });
+    const parsed = parseJson(response.output_text);
+    const patch = compactPatch(parsed.profilePatch);
+    const intent = TURN_INTENTS.has(parsed.intent) ? parsed.intent : "general";
+    return {
+      kind: intent === "request_plan" || intent === "request_crop_plan"
+        ? "request_plan"
+        : intent === "profile_update" || Object.keys(patch).length
+          ? "revision_staged"
+          : intent === "clarification"
+            ? "clarify_value"
+            : "general",
+      assistant: String(parsed.assistant || "").trim(),
+      pendingField: parsed.pendingField || "",
+      patch,
+      changedFields: Object.keys(patch),
+      selectedCropId: parsed.requestedCropId || "",
+    };
+  } catch {
+    return interpretConversationTurn(message, currentProfile, context);
+  }
 }
 
 export async function extractProfilePatch(message, currentProfile, signal, openai = client()) {
@@ -140,7 +255,7 @@ export async function briefCropCandidates(context, openai = client()) {
   try {
     const response = await openai.responses.create({
       model,
-      reasoning: { effort: "medium" },
+      reasoning: { effort: "low" },
       text: {
         format: {
           type: "json_schema",
@@ -262,12 +377,22 @@ export async function explainRecommendation(context, openai = client()) {
   ];
   const started = Date.now();
   const effort = selectReasoningEffort(context.userMessage);
+  const deadlineMs = Math.max(1, Number(context.explanationTimeoutMs) || 12000);
+  const deadline = new AbortController();
+  let deadlineExpired = false;
+  const deadlineTimer = setTimeout(() => {
+    deadlineExpired = true;
+    deadline.abort();
+  }, deadlineMs);
+  const signal = context.signal
+    ? AbortSignal.any([context.signal, deadline.signal])
+    : deadline.signal;
   try {
     const result = await runToolLoop({
       client: openai,
       model,
       reasoning: { effort },
-      signal: context.signal,
+      signal,
       input: [
         {
           role: "system",
@@ -307,19 +432,22 @@ export async function explainRecommendation(context, openai = client()) {
       usage: result.usage,
     };
   } catch (error) {
-    if (context.signal?.aborted || error?.name === "AbortError") throw error;
+    if (context.signal?.aborted) throw error;
+    const timedOut = deadlineExpired;
     return {
       text: deterministicExplanation(context, "DETERMINISTIC_RECOVERY:"),
       trace: [{
         tool: "agent.model_recovery",
         parameters: {},
-        result: { code: "MODEL_TOOL_LOOP_FAILED" },
+        result: { code: timedOut ? "MODEL_TOOL_LOOP_TIMEOUT" : "MODEL_TOOL_LOOP_FAILED" },
         timestamp: new Date().toISOString(),
         durationMs: Date.now() - started,
       }],
-      mode: "deterministic-recovery",
+      mode: timedOut ? "deterministic-timeout" : "deterministic-recovery",
       usage: null,
     };
+  } finally {
+    clearTimeout(deadlineTimer);
   }
 }
 

@@ -54,13 +54,9 @@ import {
   tier2ResultMarkdown,
 } from "./tier2.js";
 
-const DEMO_PROFILE = {
-  location: "Gazipur",
-  farmSizeAcres: 1,
-  soilType: "loam",
-  waterAvailability: "irrigated",
-  budgetBdt: 90000,
-  targetSeason: "Rabi",
+const DEMO_PROMPTS = {
+  en: `I am a farmer in Gazipur with 1 acre of loam soil, reliable irrigation, a total Rabi-season budget of BDT 90,000, and no crop selected yet. Be my conversational farm-planning agent. First acknowledge what you understood naturally and ask only if a genuinely necessary detail is missing. Then compare the four best supported crop options using live weather, retrieved Bangladesh evidence, water need, risk, affordability, expected costs, and important limitations. Do not create a full plan until I choose one crop. After I choose, create the complete dated plan from land preparation through harvest, including sowing, fertilizer timing, irrigation, weed and pest checks, costs, evidence, safety boundaries, and farmer confirmations. Keep the conversation concise, practical, and easy for a Bangladeshi farmer to follow.`,
+  bn: `আমি গাজীপুরের একজন কৃষক। আমার ১ একর দোআঁশ জমি, নির্ভরযোগ্য সেচব্যবস্থা এবং রবি মৌসুমের মোট বাজেট ৯০,০০০ টাকা। এখনো কোনো ফসল বেছে নিইনি। আপনি আমার কথোপকথনভিত্তিক কৃষি পরিকল্পনা সহকারী হিসেবে কাজ করুন। প্রথমে স্বাভাবিকভাবে বলুন আপনি কী বুঝেছেন; সত্যিই প্রয়োজন হলে শুধু একটি প্রশ্ন করুন। এরপর লাইভ আবহাওয়া, বাংলাদেশের নির্ভরযোগ্য তথ্য, পানির প্রয়োজন, ঝুঁকি, বাজেট, সম্ভাব্য খরচ এবং সীমাবদ্ধতা দেখে চারটি সেরা ফসল তুলনা করুন। আমি একটি ফসল বেছে নেওয়ার আগে পূর্ণ পরিকল্পনা তৈরি করবেন না। ফসল বেছে নেওয়ার পর জমি তৈরি থেকে ফসল কাটা পর্যন্ত তারিখসহ পূর্ণ পরিকল্পনা দিন—বপন, সার দেওয়ার সময়, সেচ, আগাছা ও রোগ-পোকা দেখা, খরচ, তথ্যসূত্র, নিরাপত্তা এবং কৃষকের অনুমোদনের ধাপসহ। কথোপকথন সংক্ষিপ্ত, ব্যবহারিক এবং বাংলাদেশের কৃষকের জন্য সহজ রাখুন।`,
 };
 
 const BANGLA_TERMS = {
@@ -259,6 +255,10 @@ export default function App() {
   const [authMode, setAuthMode] = useState(null);
   const [language, setLanguage] = useState(loadLanguage);
   const [paymentStatus, setPaymentStatus] = useState({ state: "checking" });
+  const [demoCopied, setDemoCopied] = useState(false);
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [confirmAccountDeletion, setConfirmAccountDeletion] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [sessionId, setSessionId] = useState(() => loadOrCreateSessionId());
   const [message, setMessage] = useState("");
   const [conversation, setConversation] = useState(createInitialConversation);
@@ -402,6 +402,34 @@ export default function App() {
     setCandidateResult(null);
     setConversation(createInitialConversation());
     setAuthMode(null);
+  }
+
+  async function deleteAccount() {
+    setDeletingAccount(true);
+    setError("");
+    try {
+      const response = await fetch("/api/auth/account", {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Account deletion failed");
+      requestController.current?.abort();
+      realtimeSessionRef.current?.close();
+      setAuthState({ loading: false, authenticated: false, user: null });
+      setMemoryId("");
+      setSavedMemory(null);
+      setResult(null);
+      setCandidateResult(null);
+      setConversation(createInitialConversation());
+      setAuthMode(null);
+      setShowAccountSettings(false);
+      setConfirmAccountDeletion(false);
+    } catch (deleteError) {
+      setError(deleteError.message || "Account deletion failed");
+    } finally {
+      setDeletingAccount(false);
+    }
   }
 
   const status = revision.readyToPlan
@@ -863,6 +891,17 @@ export default function App() {
       setRevision(next.revision);
       if (data.memory) setSavedMemory(data.memory);
       setMessage("");
+      if (data.planRequest) {
+        await send(
+          {
+            action: data.planRequest.action,
+            selectedCropId: data.planRequest.selectedCropId,
+            startDate: planStartDate,
+          },
+          sessionId,
+          { memoryId: privateMemory.memoryId },
+        );
+      }
       return data;
     } catch (err) {
       setError(err.message);
@@ -894,23 +933,12 @@ export default function App() {
     }
   }
 
-  async function runDemo() {
-    const fresh = createFreshDemoState();
-    persistSessionId(fresh.sessionId);
-    setSessionId(fresh.sessionId);
-    setMessage(fresh.message);
-    setConversation(fresh.conversation);
-    setResult(fresh.result);
-    setCandidateResult(null);
-    setRevision(createRevisionState());
-    setError(fresh.error);
+  async function copyDemoPrompt() {
     try {
-      const privateMemory = await ensurePrivateMemory(fresh.sessionId, fresh.conversation);
-      await send(
-        { action: "analyze", profilePatch: DEMO_PROFILE, startDate: planStartDate },
-        fresh.sessionId,
-        { memoryId: privateMemory.memoryId, mode: "demo" },
-      );
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard access is unavailable in this browser.");
+      await navigator.clipboard.writeText(DEMO_PROMPTS[language] ?? DEMO_PROMPTS.en);
+      setDemoCopied(true);
+      globalThis.setTimeout(() => setDemoCopied(false), 2200);
     } catch (err) {
       setError(err.message);
     }
@@ -1025,7 +1053,11 @@ export default function App() {
       const privateMemory = await ensurePrivateMemory();
       setBusy(false);
       await send(
-        { action: "analyze", startDate: planStartDate },
+        {
+          action: "analyze",
+          startDate: planStartDate,
+          profilePatch: savedMemory?.profile ?? candidateResult?.profile ?? result?.profile,
+        },
         sessionId,
         { memoryId: privateMemory.memoryId },
       );
@@ -1123,6 +1155,7 @@ export default function App() {
         {
           action: "plan",
           selectedCropId: crop.id,
+          profilePatch: candidateResult?.profile ?? savedMemory?.profile ?? result?.profile,
           startDate: planStartDate,
           message: language === "bn" ? `${crop.name} ফসলটি বেছে নিলাম` : `I choose ${crop.name}`,
         },
@@ -1217,10 +1250,49 @@ export default function App() {
               </button>
             ))}
           </div>
-          <button type="button" className="demo" disabled={busy} onClick={() => void runDemo()}>{t(language, "demo")}</button>
-          <div className="account-pill" aria-label={`${t(language, "signedInEnding")} ${authState.user?.mobileLast4}`}>
-            <span>••{authState.user?.mobileLast4}</span>
-            <button type="button" onClick={() => void logout()}>{t(language, "logout")}</button>
+          <button type="button" className="demo" onClick={() => void copyDemoPrompt()}>
+            {demoCopied ? (language === "bn" ? "প্রম্পট কপি হয়েছে" : "Prompt copied") : t(language, "demo")}
+          </button>
+          <div className="account-menu">
+            <button
+              type="button"
+              className="account-pill"
+              aria-label={`${t(language, "signedInEnding")} ${authState.user?.mobileLast4}`}
+              aria-expanded={showAccountSettings}
+              aria-controls="account-settings"
+              onClick={() => {
+                setShowAccountSettings((open) => !open);
+                setConfirmAccountDeletion(false);
+              }}
+            >
+              <span className="account-avatar" aria-hidden="true">A</span>
+              <span>••{authState.user?.mobileLast4}</span>
+            </button>
+            {showAccountSettings ? (
+              <div className="account-settings" id="account-settings" role="dialog" aria-label="Profile settings">
+                <strong>{language === "bn" ? "প্রোফাইল সেটিংস" : "Profile settings"}</strong>
+                <button type="button" onClick={() => void logout()}>{t(language, "logout")}</button>
+                {!confirmAccountDeletion ? (
+                  <button type="button" className="account-delete" onClick={() => setConfirmAccountDeletion(true)}>
+                    {language === "bn" ? "অ্যাকাউন্ট মুছুন" : "Delete account"}
+                  </button>
+                ) : (
+                  <div className="account-delete-confirm">
+                    <p>{language === "bn" ? "অ্যাকাউন্ট ও সংরক্ষিত তথ্য স্থায়ীভাবে মুছে যাবে।" : "Your account and saved data will be permanently deleted."}</p>
+                    <div>
+                      <button type="button" onClick={() => setConfirmAccountDeletion(false)}>
+                        {language === "bn" ? "ফিরে যান" : "Cancel"}
+                      </button>
+                      <button type="button" className="account-delete" disabled={deletingAccount} onClick={() => void deleteAccount()}>
+                        {deletingAccount
+                          ? (language === "bn" ? "মুছছে…" : "Deleting…")
+                          : (language === "bn" ? "হ্যাঁ, মুছুন" : "Yes, delete")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
         </div>
       </header>
@@ -1415,22 +1487,27 @@ export default function App() {
             </button>
             </div>
           </form>
-          <label className="date-control" htmlFor="plan-start-date">
-            {t(language, "planStartDate")}
-            <input
-              id="plan-start-date"
-              name="planStartDate"
-              type="date"
-              value={planStartDate}
-              onChange={(event) => setPlanStartDate(event.target.value)}
-              disabled={busy}
-            />
-          </label>
-          <div className="prompt-chips" aria-label="Example farm descriptions">
-            {[t(language, "exampleFarm"), t(language, "exampleBudget"), t(language, "exampleSeason")].map((example) => (
-              <button type="button" key={example} disabled={busy} onClick={() => setMessage(example)}>{example}</button>
-            ))}
-          </div>
+          <details className="plan-context-controls">
+            <summary>{language === "bn" ? "পরিকল্পনার তথ্য" : "Plan details"}</summary>
+            <div className="plan-context-body">
+              <label className="date-control" htmlFor="plan-start-date">
+                {t(language, "planStartDate")}
+                <input
+                  id="plan-start-date"
+                  name="planStartDate"
+                  type="date"
+                  value={planStartDate}
+                  onChange={(event) => setPlanStartDate(event.target.value)}
+                  disabled={busy}
+                />
+              </label>
+              <div className="prompt-chips" aria-label="Example farm descriptions">
+                {[t(language, "exampleFarm"), t(language, "exampleBudget"), t(language, "exampleSeason")].map((example) => (
+                  <button type="button" key={example} disabled={busy} onClick={() => setMessage(example)}>{example}</button>
+                ))}
+              </div>
+            </div>
+          </details>
           {error && <p id="request-error" className="error" role="alert">{error}</p>}
         </section>
 
@@ -1545,7 +1622,7 @@ export default function App() {
           </div>
         </>
       )}
-      <footer>AgriSense Tier 2 · Mobile-bound memory, live market research, plant-image assessment, and Bangla voice. <a href="/evaluation.html">Open the self-test.</a></footer>
+      <footer>AgriSense · Practical farm guidance with grounded planning, memory, market research, image assistance, and Bangla voice.</footer>
       <VoiceOrb
         open={voiceState.status === "connecting" || voiceState.status === "listening"}
         status={voiceState.status}

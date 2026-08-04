@@ -361,6 +361,18 @@ export function createAuthService({
     return store.deleteSession(sha256(sessionToken));
   }
 
+  async function deleteAccount(sessionToken) {
+    if (!sessionToken) throw new AuthError("Sign in to delete your account.", { status: 401, code: "AUTH_REQUIRED" });
+    const record = await store.loadSession(sha256(sessionToken));
+    if (!record || new Date(record.expiresAt).getTime() <= now().getTime()) {
+      throw new AuthError("Sign in to delete your account.", { status: 401, code: "AUTH_REQUIRED" });
+    }
+    const linkedMemoryId = memoryId(record.user.id);
+    const deleted = await store.deleteUser(record.user.id);
+    if (!deleted) throw new AuthError("Account could not be deleted.", { status: 503, code: "ACCOUNT_DELETE_FAILED" });
+    return { deleted: true, memoryId: linkedMemoryId };
+  }
+
   async function getSubscriber(sessionToken) {
     if (!sessionToken) throw new AuthError("Sign in to manage your subscription.", { status: 401, code: "AUTH_REQUIRED" });
     const record = await store.loadSession(sha256(sessionToken));
@@ -370,5 +382,5 @@ export function createAuthService({
     return decryptMobile(secret, record.user.mobileCiphertext);
   }
 
-  return { requestOtp, verifyOtp, setPassword, loginWithPassword, getSession, logout, getSubscriber };
+  return { requestOtp, verifyOtp, setPassword, loginWithPassword, getSession, logout, deleteAccount, getSubscriber };
 }

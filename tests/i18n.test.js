@@ -12,7 +12,8 @@ test("Bangla generation guidance asks for natural concise Bangladesh usage", () 
   const guidance = responseLanguageName("bn");
   assert.match(guidance, /natural, concise Bangla/i);
   assert.match(guidance, /Bangladesh/i);
-  assert.match(guidance, /avoid word-for-word translation/i);
+  assert.match(guidance, /avoid robotic literal translation/i);
+  assert.ok(guidance.length <= 100, "responseLanguage must fit the Tier 2 API contract");
   assert.equal(t("bn", "logout"), "বের হোন");
   assert.equal(t("banglish", "send"), "Send");
 });
